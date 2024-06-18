@@ -1,6 +1,7 @@
 import numpy as np
 
 # CPG in polar coordinates
+# Leg Order is FR, FL, RR, RL
 
 class HopfNetwork:
     def __init__(self,
@@ -25,8 +26,8 @@ class HopfNetwork:
         self.dt = dt
         self.gait = gait
         self.set_gait(gait)
-        self.des_swing = amp_swing
-        self.des_stance = amp_stance
+        self.amp_swing = amp_swing
+        self.amp_stance = amp_stance
 
         # Construct state variables (CPG amplicudes r at row 0 and CPG phases theta at row 1)
         self.X = np.zeros((2, 4))
@@ -43,15 +44,15 @@ class HopfNetwork:
 
         print("Setting gait to: ", gait)
 
-        # F_seq_trot = np.array([0.5, 0, 0, 0.5])
-        # F_seq_pace = np.array([0.5, 0, 0.5, 0])
-        # F_seq_bound = np.array([0.5, 0.5, 0, 0])
-        # F_seq_walk = np.array([0.5, 0, 0.25, 0.75])
-        # REWRITE but with FR RR FL RL
-        F_seq_trot = np.array([0.5, 0, 0.5, 0])
-        F_seq_pace = np.array([0.5, 0, 0, 0.5])
+        F_seq_trot = np.array([0.5, 0, 0, 0.5])
+        F_seq_pace = np.array([0.5, 0, 0.5, 0])
         F_seq_bound = np.array([0.5, 0.5, 0, 0])
         F_seq_walk = np.array([0.5, 0, 0.25, 0.75])
+        # REWRITE but with FR RR FL RL
+        # F_seq_trot = np.array([0.5, 0, 0.5, 0])
+        # F_seq_pace = np.array([0.5, 0, 0, 0.5])
+        # F_seq_bound = np.array([0.5, 0.5, 0, 0])
+        # F_seq_walk = np.array([0.5, 0, 0.25, 0.75])
 
         self.PHI_trot = self.calculate_PHI(F_seq_trot)
         self.PHI_pace = self.calculate_PHI(F_seq_pace)
@@ -75,9 +76,9 @@ class HopfNetwork:
 
         for i in range(4):
             if (foot_contact[i] == True):
-                cmd_angle[i] = self.des_stance * np.sin(self.get_theta()[i])
+                cmd_angle[i] = self.amp_stance * np.sin(self.get_theta()[i])
             else:
-                cmd_angle[i] = self.des_swing * np.sin(self.get_theta()[i])
+                cmd_angle[i] = self.amp_swing * np.sin(self.get_theta()[i])
         return cmd_angle
 
 
