@@ -48,6 +48,7 @@ class HopfNetwork:
         F_seq_pace = np.array([0.5, 0, 0.5, 0])
         F_seq_bound = np.array([0.5, 0.5, 0, 0])
         F_seq_walk = np.array([0.5, 0, 0.25, 0.75])
+        F_seq_custom = np.array([1, 0, 1, 0])
         # REWRITE but with FR RR FL RL
         # F_seq_trot = np.array([0.5, 0, 0.5, 0])
         # F_seq_pace = np.array([0.5, 0, 0, 0.5])
@@ -58,6 +59,7 @@ class HopfNetwork:
         self.PHI_pace = self.calculate_PHI(F_seq_pace)
         self.PHI_bound = self.calculate_PHI(F_seq_bound)
         self.PHI_walk = self.calculate_PHI(F_seq_walk)
+        self.PHI_custom = self.calculate_PHI(F_seq_custom)
 
         if gait == "TROT":
             self.PHI = self.PHI_trot
@@ -67,6 +69,8 @@ class HopfNetwork:
             self.PHI = self.PHI_bound
         elif gait == "WALK":
             self.PHI = self.PHI_walk
+        elif gait == "CUSTOM":
+            self.PHI = self.PHI_custom
         else:
             raise ValueError( gait + ' not implemented.')
         
@@ -79,7 +83,11 @@ class HopfNetwork:
                 cmd_angle[i] = self.amp_stance * np.sin(self.get_theta()[i])
             else:
                 cmd_angle[i] = self.amp_swing * np.sin(self.get_theta()[i])
+
+    
         return cmd_angle
+
+
 
 
     # Get CPG amplitudes (r)
@@ -99,7 +107,8 @@ class HopfNetwork:
         return self.X_dot[1, :]
     
     def integrate_hopf(self, foot_contact):
-        X_dot = np.zeros((2, 4))
+        X = self.X.copy()
+        X_dot = self.X_dot.copy()
 
         for i in range(4):
             r, theta = self.get_r()[i], self.get_theta()[i]
@@ -113,10 +122,14 @@ class HopfNetwork:
             if self.couple:
                 theta_dot += self.coupling_strength*np.sum(self.get_r()*np.sin(self.get_theta() - theta - self.PHI[i, :]))
 
+            #print theta_dot and i
+            # print(theta_dot, i)             
             X_dot[:, i] = [r_dot, theta_dot]
 
             # Integrate
-            self.X = self.X + self.dt*X_dot
+            self.X = X + self.dt*X_dot
             self.X_dot = X_dot
+
+
 
             self.X[1, :] = np.mod(self.X[1, :], 2*np.pi)
