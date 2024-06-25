@@ -3,15 +3,18 @@ import time
 from datetime import datetime
 
 class DataLogger:
-    def __init__(self):
+    def __init__(self, prefix=""):
         self.fields = []
         self.data = {}
         self.decimals = {}
         self.file_name = None
+        self.prefix = prefix
 
     def create_file(self, file_name=None):
         if file_name is None:
-            self.file_name = datetime.now().strftime('%Y%m%d_%H%M%S') + '.csv'
+            if self.prefix != "":
+                self.prefix = self.prefix + "_"
+            self.file_name = self.prefix + datetime.now().strftime('%Y%m%d_%H%M%S') + '.csv'
         else:
             self.file_name = file_name
         with open(self.file_name, 'w', newline='') as csvfile:

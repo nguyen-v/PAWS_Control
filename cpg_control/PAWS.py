@@ -11,7 +11,7 @@ class PAWS:
                  controller_ids = np.array([1, 2, 3, 4])
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 104, 104])
+        self.foot_contact_thr = np.array([104, 104, 102, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -45,9 +45,9 @@ class PAWS:
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [2,   0,  -2,   0],  # 1    0    0    0
+                                 [1,   0,  -1,   0],  # 1    0    0    0
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [2,   0,   2,   0],  # 1    0    1    0
+                                 [1,   0,   1,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
