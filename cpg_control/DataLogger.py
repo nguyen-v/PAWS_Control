@@ -1,5 +1,4 @@
 import csv
-import time
 from datetime import datetime
 
 class DataLogger:
@@ -51,3 +50,11 @@ class DataLogger:
 
     def get_file_name(self):
         return self.file_name
+    
+    def delete_file(self):
+        import os
+        try:
+            os.remove(self.file_name)
+        except Exception as e:
+            print(f"Error deleting file: {e}")
+            raise

@@ -2,20 +2,24 @@ import moteus
 import asyncio
 import numpy as np
 
+LUT_MODES = ["AMPLIFY", "JUMP", "CUSTOM"]
+
 class PAWS:
     def __init__(self,
                  mode = "AMPLIFY",
+                 recovery = False,
                  accel_limit = 30,
                  velocity_limit = 20,
                  max_torque = 3,
                  controller_ids = np.array([1, 2, 3, 4])
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 102, 104])
+        self.foot_contact_thr = np.array([104, 104, 102.9, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
         self.mode = mode
+        self.recovery = recovery
         self.accel_limit = accel_limit
         self.velocity_limit = velocity_limit
         self.max_torque = max_torque
@@ -39,20 +43,54 @@ class PAWS:
 
             self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [0,   0,   0,   0],  # 0    0    1    0
+                                 [-1,  0,  -1,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [1,   0,  -1,   0],  # 1    0    0    0
+                                 [1,   0,   1,   0],  # 1    0    0    0
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [1,   0,   1,   0],  # 1    0    1    0
+                                 [0,   0,   1,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1
+        elif self.mode == "JUMP":
+            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [-1,  0,  -1,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [1,   0,   -1,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [0,   0,   -1,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+        elif self.mode == "CUSTOM":
+            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [-1,  0,  -1,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [1,   0,   -1,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [0,   0,   -1,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1         
         else:
             print("Mode not supported. Not setting LUT.")
 
@@ -72,10 +110,7 @@ class PAWS:
             moteus.Register.VELOCITY: moteus.F32,
             moteus.Register.TORQUE: moteus.F32,
             # used for power estimation
-            moteus.Register.Q_CURRENT: moteus.F32,
-            moteus.Register.D_CURRENT: moteus.F32,
-            moteus.Register.VOLTAGEDQ_D: moteus.F32,
-            moteus.Register.VOLTAGEDQ_Q: moteus.F32
+            moteus.Register.POWER: moteus.F32,
         }
 
         # Create a list of moteus controllers
@@ -88,7 +123,7 @@ class PAWS:
     # Set zero position for all controllers
     async def set_zero_position(self):
         for i in self.controller_ids:
-            await self.controllers[i-1].set_output_nearest(position=0)
+            await self.controllers[i-1].set_output_exact(position=0)
 
     # Convert pressure values to foot contact boolean values
     def update_foot_contact(self):
@@ -102,14 +137,14 @@ class PAWS:
     def get_commands(self):
         if self.mode == "PASSIVE":
             return np.zeros(self.num_controllers), 0
-        if self.mode == "AMPLIFY":
+        elif self.mode in LUT_MODES:
             return self.LUT[self.get_LUT_index()], self.max_torque
         else:
             print("Mode not supported. Not setting commands.")
             return np.zeros(self.num_controllers), 0
     
     def get_state(self):
-        return self.states, self.power, self.foot_contact
+        return self.states, self.foot_contact
 
     # Send commands to the controllers
     async def update(self):
@@ -122,6 +157,21 @@ class PAWS:
             # Get commands
             position, max_torque = self.get_commands()
 
+            if self.recovery and (max_torque != 0 or self.mode == "PASSIVE"):
+                try:
+                    # print velocity and position
+                    # print(self.states[3-1].values[moteus.Register.VELOCITY], self.states[3-1].values[moteus.Register.POSITION])
+                    if abs(self.states[3-1].values[moteus.Register.VELOCITY]) < 0.1 and self.states[3-1].values[moteus.Register.POSITION] < -0.2 and self.foot_contact[3-1] == True and self.foot_contact[1-1] == False:
+                        if i == 1:
+                            position[i-1] = 3
+                        # elif i == 3:
+                        #     position[i-1] = -1.5
+                        max_torque = 4
+                        # elif i == 3:
+                        print("Recovery mode activated.")
+                except:
+                    pass
+            
             if position[i-1] == 0:
                 max_torque = 0
             else:
@@ -139,12 +189,6 @@ class PAWS:
             # Update pressure values. Analog pressure sensor is connected to motor temperature input
             self.pressure[i-1] = self.states[i-1].values[moteus.Register.MOTOR_TEMPERATURE]
 
-            # Update power values in [W]
-            self.power[i-1] = 1.5*(self.states[i-1].values[moteus.Register.Q_CURRENT]
-                                *self.states[i-1].values[moteus.Register.VOLTAGEDQ_Q] 
-                                + self.states[i-1].values[moteus.Register.D_CURRENT]
-                                *self.states[i-1].values[moteus.Register.VOLTAGEDQ_D])
-            # print(self.states[i-1].values[moteus.Register.VOLTAGEDQ_Q])
 
 
 

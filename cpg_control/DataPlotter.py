@@ -1,97 +1,110 @@
 import matplotlib.pyplot as plt
-from matplotlib import animation  # Import animation module
+from matplotlib import animation
 import csv
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
 class DataPlotter:
-    def __init__(self, csv_file):  
-        #create an empty list of processes\
+    def __init__(self, csv_file):
         self.processes = []
         self.csv_file = csv_file
     
-    def create_process(self, data_types, title, max_data_points, update_interval):
-        # Arguments passed to the target function
-        args = (self.csv_file, data_types, title, max_data_points, update_interval)
-        # Create a process with the target self.plot_live_data and the given arguments
+    def create_process(self, numeric_fields, boolean_fields, title, max_data_points, update_interval):
+        args = (self.csv_file, numeric_fields, boolean_fields, title, max_data_points, update_interval)
         p = Process(target=plot_live_data, args=args)
-        # Append the process to the list of processes
         self.processes.append(p)
-        # Start the process
         p.start()
 
     def terminate_processes(self):
-        #terminate all processes
         for p in self.processes:
             p.terminate()
             p.join()
 
-def plot_live_data(csv_file, field_names, y_label, max_data_points=100, update_interval=20):
-    
-    num_fields = len(field_names)
+def plot_live_data(csv_file, numeric_fields, boolean_fields, title, max_data_points=100, update_interval=20):
+    num_numeric_fields = len(numeric_fields)
+    num_boolean_fields = 0
+    if boolean_fields is not None:
+        num_boolean_fields = len(boolean_fields)
+    colors = ['blue', 'red', 'green', 'yellow', 'purple']
 
     def update_plot(frame):
-        nonlocal x_data, y_data, lines
+        nonlocal x_data, numeric_data, boolean_data, lines, fill_between_objs
 
-        # Read new data from CSV file
         with open(csv_file, 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 x_data.append(float(row['timestamp']))
-                for i in range(num_fields):
-                    field_name = field_names[i]
+                for i in range(num_numeric_fields):
+                    field_name = numeric_fields[i]
                     if field_name in row:
-                        value = row[field_name]
-                        if value.lower() == 'true':
-                            # Assign a unique y-value based on the index of the boolean field
-                            y_data[i].append(i + 1)  # Plot as i+1 if true (1-based indexing)
-                        elif value.lower() == 'false':
-                            y_data[i].append(None)  # Plot nothing if false
-                        else:
-                            try:
-                                y_data[i].append(float(value))  # Plot numeric values as they are
-                            except ValueError:
-                                y_data[i].append(None)  # Plot nothing if value cannot be converted to float
+                        try:
+                            numeric_data[i].append(float(row[field_name]))
+                        except ValueError:
+                            numeric_data[i].append(None)
                     else:
-                        y_data[i].append(None)  # Plot nothing if field is missing
+                        numeric_data[i].append(None)
+                for i in range(num_boolean_fields):
+                    field_name = boolean_fields[i]
+                    if field_name in row:
+                        value = row[field_name].lower()
+                        if value == 'true':
+                            boolean_data[i].append(1)
+                        elif value == 'false':
+                            boolean_data[i].append(0)
+                        else:
+                            boolean_data[i].append(None)
+                    else:
+                        boolean_data[i].append(None)
 
-        # Ensure only last MAX_DATA_POINTS are displayed
         if len(x_data) > max_data_points:
             x_data = x_data[-max_data_points:]
-            for i in range(num_fields):
-                y_data[i] = y_data[i][-max_data_points:]
+            for i in range(num_numeric_fields):
+                numeric_data[i] = numeric_data[i][-max_data_points:]
+            for i in range(num_boolean_fields):
+                boolean_data[i] = boolean_data[i][-max_data_points:]
 
-        # Update plot data
-        for i in range(num_fields):
-            lines[i].set_data(x_data, y_data[i])
+        for i in range(num_numeric_fields):
+            lines[i].set_data(x_data, numeric_data[i])
 
-        # Update y-axis limits
-        # Flatten and filter out None values
-        valid_data = [data for data in y_data if data is not None]
-        flattened_data = [item for sublist in valid_data for item in sublist if item is not None]
-        
-        if flattened_data:
-            min_y = min(flattened_data)
-            max_y = max(flattened_data)
-            ax.set_ylim(min_y - 0.5, max_y + 0.5)  # Adjust y-axis limits to create space between boolean values
+        for i in range(num_boolean_fields):
+            if fill_between_objs[i] is not None:
+                fill_between_objs[i].remove()
+            fill_between_objs[i] = ax.fill_between(x_data, 0, 1, where=[val == 1 for val in boolean_data[i]], 
+                                                   color=colors[i % len(colors)], alpha=0.15, transform=ax.get_xaxis_transform())
+
+        numeric_values = [data for sublist in numeric_data for data in sublist if data is not None]
+        if numeric_values:
+            min_y = min(numeric_values)
+            max_y = max(numeric_values)
+            ax.set_ylim(min_y - 0.5, max_y + 0.5)
         else:
-            ax.set_ylim(0, 1)  # Default y-axis limits if no valid numeric data
+            ax.set_ylim(0, 1)
 
-        # Update x-axis limits
         ax.set_xlim(min(x_data), max(x_data))
 
-        return lines
+        return lines + fill_between_objs
 
-    # Initialize plot
     fig, ax = plt.subplots()
-    ax.set_title(f"Live Plot: {', '.join(field_names)}")
+    ax.set_title(title)
     ax.set_xlabel("Time (s)")
-    ax.set_ylabel(y_label)
+    ax.set_ylabel("Values")
 
     x_data = []
-    y_data = [[] for _ in range(num_fields)]
-    lines = [ax.plot([], [], label=field_names[i], marker='')[0] for i in range(num_fields)]
-    ax.legend(loc='upper right')  # Set legend to upper right corner
+    numeric_data = [[] for _ in range(num_numeric_fields)]
+    boolean_data = [[] for _ in range(num_boolean_fields)]
+    lines = [ax.plot([], [], label=numeric_fields[i])[0] for i in range(num_numeric_fields)]
+    fill_between_objs = [None] * num_boolean_fields
 
-    # Animate plot
+    # Create handles for legend
+    handles = lines[:]
+    for i in range(num_boolean_fields):
+        boolean_patch = plt.Line2D([0], [0], color=colors[i % len(colors)], lw=4, alpha=0.15)
+        handles.append(boolean_patch)
+    if boolean_fields is not None:
+        labels = numeric_fields + boolean_fields
+    else:
+        labels = numeric_fields
+
+    ax.legend(handles, labels, loc='upper right')
+
     ani = animation.FuncAnimation(fig, update_plot, interval=update_interval)
     plt.show()

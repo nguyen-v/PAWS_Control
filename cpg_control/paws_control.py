@@ -7,13 +7,16 @@ from DataPlotter import DataPlotter
 
 TIMESTEP = 0.02
 CONTROLLER_IDS = [1, 3]
-MODE = "PASSIVE"
+MODE = "AMPLIFY"
+LOG_DATA = False
+PLOT_DATA = True
+RECOVERY = True
 
 async def motor_control(logger, paws):
     try:
         while True:
             await paws.update()
-            state, power, foot_contact = paws.get_state()
+            state, foot_contact = paws.get_state()
 
             # Log values
             logger.set_field("timestamp", time.time())
@@ -21,7 +24,7 @@ async def motor_control(logger, paws):
                 logger.set_field("position " + str(i), state[i-1].values[moteus.Register.POSITION])
                 logger.set_field("velocity " + str(i), state[i-1].values[moteus.Register.VELOCITY])
                 logger.set_field("torque " + str(i), state[i-1].values[moteus.Register.TORQUE])
-                logger.set_field("power " + str(i), power[i-1])
+                logger.set_field("power " + str(i), state[i-1].values[moteus.Register.POWER])
                 logger.set_field("pressure " + str(i), state[i-1].values[moteus.Register.MOTOR_TEMPERATURE])
                 logger.set_field("foot_contact " + str(i), foot_contact[i-1])
 
@@ -34,7 +37,7 @@ async def motor_control(logger, paws):
 
 async def main():
     # Create new PAWS object
-    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, max_torque=3)
+    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=True, max_torque=3)
     await paws.create_controllers()
     await paws.set_zero_position()
 
@@ -54,14 +57,22 @@ async def main():
     # Use default name for CSV file (date and time)
     logger.create_file()
 
-    # Create plotter object
-    plotter = DataPlotter(logger.get_file_name())
+    if PLOT_DATA:
 
-    # create process for position 1 and posistion 3
-    plotter.create_process(["position 1", "position 3", "foot_contact 1", "foot_contact 3"], "Position (trn)", 200, 20)
+        # Create plotter object
+        plotter = DataPlotter(logger.get_file_name())
 
-    # create process for velocity 1 and velocity 3 
-    plotter.create_process(["velocity 1", "velocity 3", "foot_contact 1", "foot_contact 3"], "Velocity (trn/s)", 200, 20)
+        # create process for position 1 and posistion 3
+        plotter.create_process(["position 1", "position 3"], ["foot_contact 1", "foot_contact 3"], "Position (trn)", 200, 20)
+
+        # create process for velocity 1 and velocity 3 
+        plotter.create_process(["velocity 1", "velocity 3"], ["foot_contact 1", "foot_contact 3"], "Velocity (trn/s)", 200, 20)
+
+        # create process for pressure 1 and pressure 3 
+        plotter.create_process(["pressure 1", "pressure 3"], ["foot_contact 1", "foot_contact 3"], "Pressure (-)", 200, 20)
+
+        # create process for pressure 1 and pressure 3 
+        plotter.create_process(["power 1", "power 3"], ["foot_contact 1", "foot_contact 3"], "Power (W)", 200, 20)
 
     try:
         # Start motor control task
@@ -72,8 +83,14 @@ async def main():
         print("Main task interrupted. Cleaning up...")
 
     finally:
-        # Terminate the plotting process when motor control stops
-        plotter.terminate_processes()
+
+        if PLOT_DATA:
+            # Terminate the plotting process when motor control stops
+            plotter.terminate_processes()
+
+        # Delete CSV file if logging is disabled
+        if not LOG_DATA:
+            logger.delete_file()
 
 
 if __name__ == "__main__":

@@ -17,13 +17,13 @@ def plot_positions(data, fields_to_plot, boolean_fields, title, y_label):
                          color=colors[color_idx], alpha=0.15, transform=plt.gca().get_xaxis_transform(), label=boolean_field)
         color_idx = (color_idx + 1) % len(colors)
     
-    plt.xlabel('Timestamp')
+    plt.xlabel('Timestamp [s]')
     plt.ylabel(y_label)
     plt.legend()
     plt.title(title)
 
 # File path to the CSV file
-file_path = './PASSIVE1.5MS_20240625_134705.csv'
+file_path = './PASSIVE_20240625_144334.csv'
 
 # Read the CSV file once
 data = pd.read_csv(file_path)
