@@ -2,7 +2,7 @@ import moteus
 import asyncio
 import numpy as np
 
-LUT_MODES = ["AMPLIFY", "JUMP", "CUSTOM"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM"]
 
 class PAWS:
     def __init__(self,
@@ -14,7 +14,7 @@ class PAWS:
                  controller_ids = np.array([1, 2, 3, 4])
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 102.9, 104])
+        self.foot_contact_thr = np.array([104, 104, 102.2, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -57,6 +57,85 @@ class PAWS:
                                  [0,   0,   0,   0],  # 1    1    0    1
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1
+            
+        elif self.mode == "AMPLIFY_FROM_DATA":
+            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [0,  0,  -1,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [1,   0,   1,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [1,   0,   0,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+            
+        elif self.mode == "AMPLIFY_SPEED":
+            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [0,  0,  -1,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [1,   0,   0.5,   0],  # 1    0    0    0 # 0.5 plays a major role in front feet stiffness
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [1,   0,   0.9,   0],  # 1    0    1    0 # 0.5 plays a major role in front feet stiffness
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+            
+        elif self.mode == "AMPLIFY_CUSTOM":
+            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [1,   0,   -1,   0],  # 0    0    1    0
+                                  # -1  -1: RR hits ground
+                                  # -1   0: unregular gait, fails easily
+                                  # -1   1: RR folds when in contact -> BAD
+                                  # 0    -1: better
+                                  # 0    1: RR folds when hitting the ground, which acts as a spring (in a bad way)
+                                  # 1   -1: bounding
+                                  # 1   0: no significant changes
+                                  # 1   1: RR folds when in contact -> BAD
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [-1,   0,   0,   0],  # 1    0    0    0  
+                                 # -1 -1: high jumps increasingly higher
+                                 # -1  0: RR lifts higher -> GOOD
+                                 # -1  1: RR lifts higher but fails
+                                 #  0  -1: JUMPS
+                                 #  0  1: RR hits ground
+                                 #  1 -1: FR exerts more force on the ground, jumps a bit higher. RR lifts higher by pushing harder -> JUMPS
+                                 #  1  0: FR exerts more force on the ground, jumps a bit higher
+                                 #  1  1: RR hits ground
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [1,   0,   -1,   0],  # 1    0    1    0 
+                                 # -1 -1: brings RR faster but hits ground ?
+                                 # -1  0  brings RR faster but hits ground
+                                 # -1  1  brings RR faster but hits ground
+                                 #  0  -1 
+                                 #  0  1  no improvement
+                                 # 1  -1  better
+                                 # 1   0  better but no improvement on RR
+                                 # 1   1  RR hits ground
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+        
         elif self.mode == "JUMP":
             self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
@@ -66,7 +145,7 @@ class PAWS:
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [1,   0,   -1,   0],  # 1    0    0    0
+                                 [1,   0,   0,   0],  # 1    0    0    0  # 1 -1 BEFORE
                                  [0,   0,   0,   0],  # 1    0    0    1
                                  [0,   0,   -1,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
@@ -83,7 +162,7 @@ class PAWS:
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [1,   0,   -1,   0],  # 1    0    0    0
+                                 [-1,   0,   -1,   0],  # 1    0    0    0
                                  [0,   0,   0,   0],  # 1    0    0    1
                                  [0,   0,   -1,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
@@ -107,6 +186,7 @@ class PAWS:
         self.qr._extra = {
             moteus.Register.MOTOR_TEMPERATURE: moteus.F32,
             moteus.Register.POSITION: moteus.F32,
+            moteus.Register.COMMAND_POSITION: moteus.F32,
             moteus.Register.VELOCITY: moteus.F32,
             moteus.Register.TORQUE: moteus.F32,
             # used for power estimation
@@ -123,7 +203,8 @@ class PAWS:
     # Set zero position for all controllers
     async def set_zero_position(self):
         for i in self.controller_ids:
-            await self.controllers[i-1].set_output_exact(position=0)
+            # await self.controllers[i-1].set_output_exact(position=0)
+            await self.controllers[i-1].set_output_nearest(position=0)
 
     # Convert pressure values to foot contact boolean values
     def update_foot_contact(self):

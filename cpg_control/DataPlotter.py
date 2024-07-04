@@ -8,8 +8,8 @@ class DataPlotter:
         self.processes = []
         self.csv_file = csv_file
     
-    def create_process(self, numeric_fields, boolean_fields, title, max_data_points, update_interval):
-        args = (self.csv_file, numeric_fields, boolean_fields, title, max_data_points, update_interval)
+    def create_process(self, numeric_fields, boolean_fields, title, y_label, max_data_points, update_interval):
+        args = (self.csv_file, numeric_fields, boolean_fields, title, y_label, max_data_points, update_interval)
         p = Process(target=plot_live_data, args=args)
         self.processes.append(p)
         p.start()
@@ -19,7 +19,7 @@ class DataPlotter:
             p.terminate()
             p.join()
 
-def plot_live_data(csv_file, numeric_fields, boolean_fields, title, max_data_points=100, update_interval=20):
+def plot_live_data(csv_file, numeric_fields, boolean_fields, title, y_label, max_data_points=100, update_interval=20):
     num_numeric_fields = len(numeric_fields)
     num_boolean_fields = 0
     if boolean_fields is not None:
@@ -86,7 +86,7 @@ def plot_live_data(csv_file, numeric_fields, boolean_fields, title, max_data_poi
     fig, ax = plt.subplots()
     ax.set_title(title)
     ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Values")
+    ax.set_ylabel(y_label)
 
     x_data = []
     numeric_data = [[] for _ in range(num_numeric_fields)]
