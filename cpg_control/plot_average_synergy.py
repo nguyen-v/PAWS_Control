@@ -2,15 +2,26 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-FACTOR = 360/5
+FACTOR = 180 / (np.pi)  # Conversion factor from radians to degrees
+PERIOD_OFFSET = 0.35  # Offset in seconds before and after foot contact
 
 # List of CSV files for different treadmill speeds
+# file_paths = {
+#     1: ['PASSIVE_LONGER_1KMH.csv', 'PASSIVE_LONGER_1KMH_2.csv'],
+#     1.5: ['PASSIVE_LONGER_1.5KMH.csv', 'PASSIVE_LONGER_1.5KMH_2.csv'],
+#     2: ['PASSIVE_LONGER_2KMH.csv', 'PASSIVE_LONGER_2KMH_2.csv'],
+#     2.5: ['PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+#     3: ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+# }
+# speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
+
 file_paths = {
-    1: ['PASSIVE_LONGER_1KMH.csv', 'PASSIVE_LONGER_1KMH_2.csv'],
-    1.5: ['PASSIVE_LONGER_1.5KMH.csv', 'PASSIVE_LONGER_1.5KMH_2.csv'],
-    2: ['PASSIVE_LONGER_2KMH.csv', 'PASSIVE_LONGER_2KMH_2.csv'],
-    2.5: ['PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
-    3: ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+    1: ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    # 1: ['PASSIVE_20240710_151048.csv'],
+    1.5: ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    2: ['PASSIVE_REPAIR1_2KMH.csv'],
+    2.5: ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    3: ['PASSIVE_REPAIR1_3KMH.csv']
 }
 speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
@@ -27,12 +38,12 @@ def compute_average_data(timestamps, foot_contact1, data1, data2, factor=1.0, of
     periods_data2 = []
 
     for i in range(len(transitions)):
-        start_index = transitions[i] - int(0.35 / dt)  # 0.5 seconds before transition
+        start_index = transitions[i] - int(PERIOD_OFFSET / dt)  # 0.5 seconds before transition
 
         if i < len(transitions) - 1:
-            end_index = transitions[i + 1]
+            end_index = transitions[i + 1] - int(PERIOD_OFFSET / dt)
         else:
-            end_index = len(timestamps) - 1
+            end_index = len(timestamps) - 1 - int(PERIOD_OFFSET / dt)
 
         period_data1 = data1[start_index:end_index]
         period_data2 = data2[start_index:end_index]
@@ -97,6 +108,8 @@ for idx, speed in enumerate(speeds):
 
         avg_data1_list.append(avg_data1)
         avg_data2_list.append(avg_data2)
+
+
 
     # Find the maximum length of averaged data for the current speed
     max_length = max(len(data) for data in avg_data1_list)

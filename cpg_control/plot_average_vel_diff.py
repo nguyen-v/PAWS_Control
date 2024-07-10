@@ -2,18 +2,18 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-FACTOR = 1
-PERIOD_OFFSET = 0.5  # Offset in seconds before and after foot contact  
+FACTOR = 360 / 5
+PERIOD_OFFSET = 0.35  # Offset in seconds before and after foot contact
 
 # List of CSV files for different treadmill speeds
+
+speeds = [2.5, 3]  # Corresponding speeds in km/h
+
 file_paths = {
-    1: ['PASSIVE_LONGER_1KMH.csv', 'PASSIVE_LONGER_1KMH_2.csv'],
-    1.5: ['PASSIVE_LONGER_1.5KMH.csv', 'PASSIVE_LONGER_1.5KMH_2.csv'],
-    2: ['PASSIVE_LONGER_2KMH.csv', 'PASSIVE_LONGER_2KMH_2.csv'],
-    2.5: ['PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
-    3: ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+    speeds[0]: ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    speeds[1]: ['PASSIVE_REPAIR1_3KMH.csv'],
 }
-speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
+
 
 # Function to compute average data across periods
 def compute_average_data(timestamps, foot_contact1, data1, data2, factor=1.0, offset=False):
@@ -70,11 +70,14 @@ def compute_average_dt(timestamps):
     return dt
 
 # Iterate over each speed and process the corresponding files
-fig, axs = plt.subplots(5, 1, figsize=(12, 12), sharex=True)
+fig, axs = plt.subplots(len(speeds) + 1, 1, figsize=(12, 12), sharex=True)
 
 # Variables to store global y-axis limits
 global_min = float('inf')
 global_max = float('-inf')
+
+# Dictionary to store average data for each speed
+average_data = {speed: {'synergy1': None, 'synergy2': None} for speed in speeds}
 
 for idx, speed in enumerate(speeds):
     avg_data1_list = []
@@ -87,8 +90,8 @@ for idx, speed in enumerate(speeds):
         # Extract the relevant columns
         timestamps = data['timestamp'].values
         foot_contact1 = data['foot_contact 1'].values
-        data1 = data['pressure 1'].values
-        data2 = data['pressure 3'].values
+        data1 = data['velocity 1'].values
+        data2 = data['velocity 3'].values
 
         # Compute average dt from timestamps
         dt = compute_average_dt(timestamps)
@@ -123,6 +126,10 @@ for idx, speed in enumerate(speeds):
     global_min = min(global_min, np.min(avg_data1_crop), np.min(avg_data2_crop))
     global_max = max(global_max, np.max(avg_data1_crop), np.max(avg_data2_crop))
 
+    # Store average data for current speed
+    average_data[speed]['synergy1'] = avg_data1_crop
+    average_data[speed]['synergy2'] = avg_data2_crop
+
     # Plotting on subplots
     axs[idx].plot(periods_crop, avg_data1_crop, color='red', label='Average Synergy 1')
     axs[idx].plot(periods_crop, avg_data2_crop, color='gray', label='Average Synergy 2')
@@ -130,15 +137,26 @@ for idx, speed in enumerate(speeds):
     axs[idx].grid(True)
     axs[idx].legend(loc='upper left', fontsize=10)
 
+# Compute the differences between the speeds for the third plot
+difference_synergy1 = average_data[speeds[1]]['synergy1'] - average_data[speeds[0]]['synergy1']
+difference_synergy2 = average_data[speeds[1]]['synergy2'] - average_data[speeds[0]]['synergy2']
+
+# Plot the differences in the third subplot
+axs[len(speeds)].plot(periods_crop, difference_synergy1, color='blue', label='Difference Velocity 1')
+axs[len(speeds)].plot(periods_crop, difference_synergy2, color='green', label='Difference Velocity 2')
+axs[len(speeds)].set_title('Difference between Speeds', fontsize=14)
+axs[len(speeds)].grid(True)
+axs[len(speeds)].legend(loc='upper left', fontsize=10)
+
 # Set the same y-axis limit for all subplots
 for ax in axs.flat:
-    ax.set_ylim(global_min - 10, global_max + 10)
+    ax.set_ylim(-1700 - 10, 1700 + 10)
 
 # Set x-axis labels for each column
 axs[-1].set_xlabel('Time [seconds]', fontsize=12)
 
 # Common Y-axis label
-fig.text(0.04, 0.5, 'Pressure [-]', va='center', rotation='vertical', fontsize=12)
+fig.text(0.04, 0.5, 'Velocity [deg/s]', va='center', rotation='vertical', fontsize=12)
 
 # Adjust layout
 plt.tight_layout(rect=[0.05, 0.05, 1, 1])

@@ -2,109 +2,195 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+FACTOR = 360 / 5
+PERIOD_OFFSET = 0.35  # Offset in seconds before and after foot contact
+
 # List of CSV files for different treadmill speeds
-file_paths = ['PASSIVE_1_LONG.csv', 'PASSIVE_1.5_LONG.csv', 'PASSIVE_2_LONG.csv',
-              'PASSIVE_3_LONG.csv']
-speeds = [1, 1.5, 2, 3]  # Corresponding speeds in km/h
+file_paths = {
+    1: ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    1.5: ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    2: ['PASSIVE_REPAIR1_2KMH.csv'],
+    2.5: ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    3: ['PASSIVE_REPAIR1_3KMH.csv'],
+}
+speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
-# Function to compute average position data across periods
-def compute_average_positions(timestamps, foot_contact1, position1, position3, pressure1, pressure3, velocity1, velocity3):
-    avg_position1 = []
-    avg_position3 = []
-    front_foot = []
-    back_foot = []
-    avg_velocity1 = []
-    avg_velocity3 = []
-    
-    # Identify the transition points from False to True in foot_contact 1
+# Function to compute average data across periods
+def compute_average_data(timestamps, foot_contact1, data1, data2, factor=1.0, offset=False):
+    avg_data1 = []
+    avg_data2 = []
+
+    # Identify the transition points from False to True in foot_contact1
     transitions = np.where((foot_contact1[:-1] == False) & (foot_contact1[1:] == True))[0]
-    
-    # List to store positions for each period
-    periods_position1 = []
-    periods_position3 = []
-    
+
+    # List to store data for each period
+    periods_data1 = []
+    periods_data2 = []
+
     for i in range(len(transitions)):
-        start_index = transitions[i] - int(0.5 / 0.03)  # 0.5 seconds before transition
-        
+        start_index = transitions[i] - int(PERIOD_OFFSET / dt)  # 0.5 seconds before transition
+
         if i < len(transitions) - 1:
-            end_index = transitions[i + 1]
+            end_index = transitions[i + 1] - int(PERIOD_OFFSET / dt)
         else:
-            end_index = len(timestamps) - 1
-        
-        period_positions1 = position1[start_index:end_index]
-        period_positions3 = position3[start_index:end_index]
-        
-        periods_position1.append(period_positions1)
-        periods_position3.append(period_positions3)
-        
-        # Determine footfall sequence for front foot (pressure 1)
-        period_pressure1 = pressure1[start_index:end_index]
-        front_foot_period = [1 if p > 102.5 else 0 for p in period_pressure1]
-        front_foot.append(front_foot_period)
-        
-        # Determine footfall sequence for back foot (pressure 3)
-        period_pressure3 = pressure3[start_index:end_index]
-        back_foot_period = [1 if p > 104 else 0 for p in period_pressure3]
-        back_foot.append(back_foot_period)
-        
-        # Calculate average velocity across periods
-        avg_velocity1.append(np.mean(velocity1[start_index:end_index]))  # Compute average velocity 1
-        avg_velocity3.append(np.mean(velocity3[start_index:end_index]))  # Compute average velocity 3
-    
+            end_index = len(timestamps) - 1 - int(PERIOD_OFFSET / dt)
+
+        period_data1 = data1[start_index:end_index]
+        period_data2 = data2[start_index:end_index]
+
+        periods_data1.append(period_data1)
+        periods_data2.append(period_data2)
+
     # Find the maximum length of periods to align data
-    max_length = max(len(periods_position1[i]) for i in range(len(periods_position1)))
-    
+    max_length = max(len(period) for period in periods_data1)
+
+    # Pad periods with NaN values to make them the same length
+    for i in range(len(periods_data1)):
+        periods_data1[i] = np.pad(periods_data1[i], (0, max_length - len(periods_data1[i])), constant_values=np.nan)
+        periods_data2[i] = np.pad(periods_data2[i], (0, max_length - len(periods_data2[i])), constant_values=np.nan)
+
     # Calculate average across all periods for each data point
-    for j in range(max_length):
-        avg_position1.append(np.mean([periods_position1[i][j] for i in range(len(periods_position1)) if j < len(periods_position1[i])]))
-        avg_position3.append(np.mean([periods_position3[i][j] for i in range(len(periods_position3)) if j < len(periods_position3[i])]))
-    
-    return avg_position1, avg_position3, front_foot, back_foot, avg_velocity1, avg_velocity3
+    avg_data1 = np.nanmean(periods_data1, axis=0)
+    avg_data2 = np.nanmean(periods_data2, axis=0)
 
-# Iterate over each file
-fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+    # Apply the factor for unit conversion
+    avg_data1 = np.array(avg_data1) * factor
+    avg_data2 = np.array(avg_data2) * factor
 
-for i, file_path in enumerate(file_paths):
-    # Load the data from the CSV file
-    data = pd.read_csv(file_path)
+    if offset:
+        # Offset positions to start at y=0
+        avg_data1 = np.array(avg_data1) - avg_data1[0]
+        avg_data2 = np.array(avg_data2) - avg_data2[0]
+
+    return avg_data1, avg_data2, dt
+
+# Function to compute average time step (dt) from timestamps
+def compute_average_dt(timestamps):
+    dt = np.mean(np.diff(timestamps))  # Calculate mean time difference
+    return dt
+
+# Iterate over each speed and process the corresponding files
+fig, axs = plt.subplots(5, 1, figsize=(12, 12), sharex=True)
+
+# Variables to store global y-axis limits
+global_min = float('inf')
+global_max = float('-inf')
+
+for idx, speed in enumerate(speeds):
+    avg_data1_list = []
+    avg_data2_list = []
+
+    for file_path in file_paths[speed]:
+        # Load the data from the CSV file
+        data = pd.read_csv(file_path)
+
+        # Extract the relevant columns
+        timestamps = data['timestamp'].values
+        foot_contact1 = data['foot_contact 1'].values
+        data1 = data['position 1'].values
+        data2 = data['position 3'].values
+
+        # Compute average dt from timestamps
+        dt = compute_average_dt(timestamps)
+
+        # Compute average data across periods
+        avg_data1, avg_data2, _ = compute_average_data(timestamps, foot_contact1, data1, data2, factor=FACTOR, offset=True)
+
+        avg_data1_list.append(avg_data1)
+        avg_data2_list.append(avg_data2)
+
+    # Find the maximum length of averaged data for the current speed
+    max_length = max(len(data) for data in avg_data1_list)
+
+    # Pad averaged data with NaN values to make them the same length
+    for i in range(len(avg_data1_list)):
+        avg_data1_list[i] = np.pad(avg_data1_list[i], (0, max_length - len(avg_data1_list[i])), constant_values=np.nan)
+        avg_data2_list[i] = np.pad(avg_data2_list[i], (0, max_length - len(avg_data2_list[i])), constant_values=np.nan)
+
+    # Compute the overall average for the current speed
+    avg_data1 = np.nanmean(avg_data1_list, axis=0)
+    avg_data2 = np.nanmean(avg_data2_list, axis=0)
     
-    # Extract the relevant columns
-    timestamps = data['timestamp'].values
-    foot_contact1 = data['foot_contact 1'].values
-    position1 = data['position 1'].values
-    position3 = data['position 3'].values
-    pressure1 = data['pressure 1'].values
-    pressure3 = data['pressure 3'].values
-    velocity1 = data['velocity 1'].values
-    velocity3 = data['velocity 3'].values
-    
-    # Compute average positions, footfall sequences, and velocities across periods
-    avg_position1, avg_position3, front_foot, back_foot, avg_velocity1, avg_velocity3 = compute_average_positions(timestamps, foot_contact1, position1, position3, pressure1, pressure3, velocity1, velocity3)
-    
-    # Convert position 1 and position 3 to degrees and seconds
-    avg_position1_deg = np.array(avg_position1) * (360 / 5)  # Assuming reduction ratio of 5
-    avg_position3_deg = np.array(avg_position3) * (360 / 5)  # Assuming reduction ratio of 5
-    periods = np.arange(len(avg_position1)) * 0.03  # Time in seconds (assuming each timestep is 0.03 seconds)
-    
+    periods = np.arange(len(avg_data1)) * dt  # Time in seconds (dynamic timestep)
+
     # Crop data to x = 0 to 1
     mask = (periods >= 0) & (periods <= 1)
     periods_crop = periods[mask]
-    avg_position1_deg_crop = avg_position1_deg[mask]
-    avg_position3_deg_crop = avg_position3_deg[mask]
-    
-    # Plotting footfall sequences and average velocities on the same subplot
-    axs[i].bar(periods_crop, front_foot[0][:len(periods_crop)], color='red', alpha=0.5, label='Front Foot')
-    axs[i].bar(periods_crop, back_foot[0][:len(periods_crop)], bottom=-1, color='grey', alpha=0.5, label='Back Foot')
-    axs[i].plot(periods_crop[:len(avg_velocity1)], avg_velocity1[:len(periods_crop)], color='blue', label='Average Velocity 1')
-    axs[i].plot(periods_crop[:len(avg_velocity3)], avg_velocity3[:len(periods_crop)], color='green', label='Average Velocity 3')
-    axs[i].set_title(f'Treadmill speed {speeds[i]} km/h', fontsize=14)
-    axs[i].set_ylim(-1.2, 1.2)
-    axs[i].set_yticks([-1, 0, 1])
-    axs[i].legend(loc='upper left')
+    avg_data1_crop = avg_data1[mask]
+    avg_data2_crop = avg_data2[mask]
 
-# Common X-axis label
-fig.text(0.5, 0, 'Time [seconds]', ha='center', fontsize=12)
+# Variables to store global y-axis limits for velocity
+velocity_global_min = float('inf')
+velocity_global_max = float('-inf')
+
+for idx, speed in enumerate(speeds):
+    avg_data1_list = []
+    avg_data2_list = []
+
+    for file_path in file_paths[speed]:
+        # Load the data from the CSV file
+        data = pd.read_csv(file_path)
+
+        # Extract the relevant columns
+        timestamps = data['timestamp'].values
+        foot_contact1 = data['foot_contact 1'].values
+        data1 = data['position 1'].values
+        data2 = data['position 3'].values
+
+        # Compute average dt from timestamps
+        dt = compute_average_dt(timestamps)
+
+        # Compute average data across periods
+        avg_data1, avg_data2, _ = compute_average_data(timestamps, foot_contact1, data1, data2, factor=FACTOR, offset=True)
+
+        avg_data1_list.append(avg_data1)
+        avg_data2_list.append(avg_data2)
+
+    # Find the maximum length of averaged data for the current speed
+    max_length = max(len(data) for data in avg_data1_list)
+
+    # Pad averaged data with NaN values to make them the same length
+    for i in range(len(avg_data1_list)):
+        avg_data1_list[i] = np.pad(avg_data1_list[i], (0, max_length - len(avg_data1_list[i])), constant_values=np.nan)
+        avg_data2_list[i] = np.pad(avg_data2_list[i], (0, max_length - len(avg_data2_list[i])), constant_values=np.nan)
+
+    # Compute the overall average for the current speed
+    avg_data1 = np.nanmean(avg_data1_list, axis=0)
+    avg_data2 = np.nanmean(avg_data2_list, axis=0)
+    
+    periods = np.arange(len(avg_data1)) * dt  # Time in seconds (dynamic timestep)
+
+    # Crop data to x = 0 to 1
+    mask = (periods >= 0) & (periods <= 1)
+    periods_crop = periods[mask]
+    avg_data1_crop = avg_data1[mask]
+    avg_data2_crop = avg_data2[mask]
+
+    # Compute velocity as the numerical derivative of position
+    velocity1 = np.gradient(avg_data1_crop, dt)
+    velocity2 = np.gradient(avg_data2_crop, dt)
+
+    # Update global y-axis limits for velocity
+    velocity_global_min = min(velocity_global_min, np.min(velocity1), np.min(velocity2))
+    velocity_global_max = max(velocity_global_max, np.max(velocity1), np.max(velocity2))
+
+    # Plotting on subplots
+    axs[idx].plot(periods_crop, velocity1, color='blue', label='Velocity Synergy 1')
+    axs[idx].plot(periods_crop, velocity2, color='green', label='Velocity Synergy 2')
+    axs[idx].set_title(f'Treadmill speed {speed} km/h', fontsize=14)
+    axs[idx].grid(True)
+    axs[idx].legend(loc='upper left', fontsize=10)
+
+# Set the same y-axis limit for all subplots
+for ax in axs.flat:
+    ax.set_ylim(velocity_global_min - 10, velocity_global_max + 10)
+
+# Set x-axis labels for each column
+axs[-1].set_xlabel('Time [seconds]', fontsize=12)
+
+# Common Y-axis label
+fig.text(0.04, 0.5, 'Velocity [deg/s]', va='center', rotation='vertical', fontsize=12)
 
 # Adjust layout
-plt.tight_layout()
+plt.tight_layout(rect=[0.05, 0.05, 1, 1])
 plt.show()

@@ -23,16 +23,16 @@ def plot_positions(data, fields_to_plot, boolean_fields, title, y_label):
     plt.title(title)
 
 # File path to the CSV file
-file_path = './PASSIVE_LONGER_3KMH_2.csv'
+file_path = './PASSIVE_REPAIR1_1.5KMH.csv'
 
 # Read the CSV file once
 data = pd.read_csv(file_path)
 
 # Create plot for positions
-# plot_positions(data, ['position 1', 'position 3'], ['foot_contact 1', 'foot_contact 3'], 'Positions and Foot Contacts Over Time', 'tr')
+plot_positions(data, ['position 1', 'position 3'], ['foot_contact 1', 'foot_contact 3'], 'Positions and Foot Contacts Over Time', 'rad')
 
 # # Create plot for velocities
-# plot_positions(data, ['velocity 1', 'velocity 3'], ['foot_contact 1', 'foot_contact 3'], 'Velocities and Foot Contacts Over Time', 'tr/s')
+# plot_positions(data, ['velocity 1', 'velocity 3'], ['foot_contact 1', 'foot_contact 3'], 'Velocities and Foot Contacts Over Time', 'rad/s')
 
 # # Create plot for power
 # plot_positions(data, ['power 1', 'power 3'], ['foot_contact 1', 'foot_contact 3'], 'Power and Foot Contacts Over Time', 'W')

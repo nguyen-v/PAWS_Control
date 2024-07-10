@@ -17,17 +17,18 @@ PERIOD_OFFSET = 0.5
 # speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 file_paths = [
-    ['PASSIVE_LONGER_1KMH.csv', 'PASSIVE_LONGER_1KMH_2.csv'],
-    ['PASSIVE_LONGER_1.5KMH.csv', 'PASSIVE_LONGER_1.5KMH_2.csv'],
-    ['PASSIVE_LONGER_2KMH.csv', 'PASSIVE_LONGER_2KMH_2.csv'],
-    ['PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+    ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    ['PASSIVE_REPAIR1_2KMH.csv'],
+    ['PASSIVE_REPAIR1_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+    # ['PASSIVE_REPAIR1_3KMH.csv']
     ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
 ]
 
 speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
-# Thresholds for each speed
-thresholds = [1, 1, 0.8, 0.8, 0.4]
+# Thresholds for each speed. Computed from plot_pressure_debouncing.py
+thresholds = [0.4, 0.6, 0.8, 0.6, 0.4]
 
 def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, factor=1.0, offset=False):
     avg_data1 = []

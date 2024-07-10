@@ -15,14 +15,14 @@ PERIOD_OFFSET = 0.5  # Offset in seconds before and after foot contact
 # ]
 
 file_paths = [
-    ['PASSIVE_LONGER_3KMH.csv'],
-    ['PASSIVE_LONGER_3KMH_2.csv'],
+    ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    ['PASSIVE_REPAIR1_3KMH.csv'],
 ]
 
-speeds = [3, 3]  # Corresponding speeds in km/h
+speeds = [2.5, 3]  # Corresponding speeds in km/h
 
 # Thresholds for each speed
-thresholds = [0.3, 0.3]
+thresholds = [0.4, 0.1]
 
 def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, factor=1.0, offset=False):
     avg_data1 = []
@@ -98,10 +98,6 @@ def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, fac
 
     flattened_array1.extend(end_array1)
     flattened_array2.extend(end_array2)
-
-    print(len(flattened_array1), len(data1))
-    print(len(flattened_array2), len(data2))
-    
 
     return np.array(flattened_array1), np.array(flattened_array2), avg_data1, avg_data2, dt
 

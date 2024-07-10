@@ -1,8 +1,10 @@
 import moteus
 import asyncio
 import numpy as np
+from HopfNetwork import HopfNetwork
+from SineNetwork import SineNetwork
 
-LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM", "STIFF"]
 
 class PAWS:
     def __init__(self,
@@ -14,7 +16,7 @@ class PAWS:
                  controller_ids = np.array([1, 2, 3, 4])
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 102.2, 104])
+        self.foot_contact_thr = np.array([104, 104, 102, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -25,8 +27,12 @@ class PAWS:
         self.max_torque = max_torque
         self.controller_ids = controller_ids
         self.LUT = np.zeros((2**self.num_controllers, self.num_controllers))
-        if self.mode != "PASSIVE":
+        if self.mode in LUT_MODES:
             self.set_LUT()
+        if self.mode == "CPG":
+            self.hopf = HopfNetwork()
+        if self.mode == "SINE":
+            self.sine = SineNetwork()
         self.states = [None, None, None, None]
 
     # Set LUT
@@ -154,22 +160,39 @@ class PAWS:
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1
         elif self.mode == "CUSTOM":
-            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+            self.LUT = np.array([[0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [-1,  0,  -1,   0],  # 0    0    1    0
+                                 [-0.7,  0,  -0.7,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [-1,   0,   -1,   0],  # 1    0    0    0
+                                 [1,   0,   2,   0],  # 1    0    0    0
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [0,   0,   -1,   0],  # 1    0    1    0
+                                 [-0.7,   0,   -0.7,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1         
+        elif self.mode == "STIFF":
+            self.LUT = np.array([[0.01,   0,   0.01,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [0.01,  0,  0.01,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [0.01,   0,   0.01,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [0.01,   0,   0.01,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1     
         else:
             print("Mode not supported. Not setting LUT.")
 
@@ -228,7 +251,7 @@ class PAWS:
         return self.states, self.foot_contact
 
     # Send commands to the controllers
-    async def update(self):
+    async def update(self, timestamp):
 
         # Update foot contact
         self.update_foot_contact()
@@ -236,25 +259,20 @@ class PAWS:
         for i in self.controller_ids:
                 
             # Get commands
-            position, max_torque = self.get_commands()
-
-            if self.recovery and (max_torque != 0 or self.mode == "PASSIVE"):
-                try:
-                    # print velocity and position
-                    # print(self.states[3-1].values[moteus.Register.VELOCITY], self.states[3-1].values[moteus.Register.POSITION])
-                    if abs(self.states[3-1].values[moteus.Register.VELOCITY]) < 0.1 and self.states[3-1].values[moteus.Register.POSITION] < -0.2 and self.foot_contact[3-1] == True and self.foot_contact[1-1] == False:
-                        if i == 1:
-                            position[i-1] = 3
-                        # elif i == 3:
-                        #     position[i-1] = -1.5
-                        max_torque = 4
-                        # elif i == 3:
-                        print("Recovery mode activated.")
-                except:
-                    pass
+            if self.mode in LUT_MODES:
+                position, max_torque = self.get_commands()
+            elif self.mode == "CPG":
+                position = self.hopf.update(self.foot_contact)
+                max_torque = self.max_torque
+            elif self.mode == "PASSIVE":
+                position = [0, 0, 0, 0]
+            elif self.mode == "SINE":
+                position = self.sine.update(self.foot_contact, timestamp)
+                max_torque = self.max_torque
             
-            if position[i-1] == 0:
+            if position[i-1] == 0 and self.mode != "SINE":
                 max_torque = 0
+
             else:
                 await self.controllers[i-1].set_recapture_position_velocity()
 

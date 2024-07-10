@@ -6,13 +6,13 @@ import numpy as np
 class HopfNetwork:
     def __init__(self,
                  mu = 1**2,                 # intrisic amplitude
-                 omega_swing = 5*2*np.pi,   # frequency in swing phase
-                 omega_stance = 2*2*np.pi,  # frequency in stance phase
+                 omega_swing = 0.25*2*np.pi,   # frequency in swing phase
+                 omega_stance = 0.4*2*np.pi,  # frequency in stance phase
                  gait="TROT",               # gait pattern
                  alpha = 50,                # amplitude convergence factor
                  coupling_strength = 1,     # coupling strength (for coupling matrix)
                  couple = True,             # True if oscillators should be coupled
-                 dt=0.001,                  # time step
+                 dt=0.03,                  # time step
                  amp_swing = np.pi/4,        # desired amplitude in swing phase
                  amp_stance = np.pi/4):      # desired amplitude in stance phase
     

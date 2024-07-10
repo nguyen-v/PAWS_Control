@@ -8,13 +8,15 @@ reduction_ratio = 5
 
 # File paths and corresponding treadmill speeds
 file_paths = {
-    "1 km/h": ["PASSIVE_LONGER_1KMH.csv", "PASSIVE_LONGER_1KMH_2.csv"],
-    "1.5 km/h": ["PASSIVE_LONGER_1.5KMH.csv", "PASSIVE_LONGER_1.5KMH_2.csv"],
-    "2 km/h": ["PASSIVE_LONGER_2KMH.csv", "PASSIVE_LONGER_2KMH_2.csv"],
-    "2.5 km/h": ["PASSIVE_LONGER_2.5KMH.csv", "PASSIVE_LONGER_2.5KMH_2.csv"],
-    "3 km/h": ["PASSIVE_LONGER_3KMH.csv", "PASSIVE_LONGER_3KMH_2.csv"]
+    "1 km/h": ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    "1.5 km/h": ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    "2 km/h": ['PASSIVE_REPAIR1_2KMH.csv'],
+    "2.5 km/h": ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    "3 km/h": ['PASSIVE_REPAIR1_3KMH.csv']
     # "3.5 km/h": ["PASSIVE_3.5_LONG.csv", "ANOTHER_3.5KMH.csv"]
 }
+
+speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 # Initialize lists to store results
 speeds = []

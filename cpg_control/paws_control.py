@@ -8,8 +8,8 @@ import numpy as np
 
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
-MODE = "PASSIVE"
-LOG_DATA = True
+MODE = "STIFF"
+LOG_DATA = False
 PLOT_DATA = True
 RECOVERY = False
 TRN_TO_RAD = 2*np.pi
@@ -17,7 +17,7 @@ TRN_TO_RAD = 2*np.pi
 async def motor_control(logger, paws):
     try:
         while True:
-            await paws.update()
+            await paws.update(time.time())
             state, foot_contact = paws.get_state()
 
             # Log values
@@ -40,7 +40,7 @@ async def motor_control(logger, paws):
 
 async def main():
     # Create new PAWS object
-    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=3)
+    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=0)
     await paws.create_controllers()
     await paws.set_zero_position()
 

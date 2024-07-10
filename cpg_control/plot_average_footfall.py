@@ -6,18 +6,27 @@ FACTOR = 1
 PERIOD_OFFSET = 0.5  # Offset in seconds before and after foot contact
 
 # List of CSV files for different treadmill speeds
+# file_paths = [
+#     ['PASSIVE_LONGER_1KMH.csv', 'PASSIVE_LONGER_1KMH_2.csv'],
+#     ['PASSIVE_LONGER_1.5KMH.csv', 'PASSIVE_LONGER_1.5KMH_2.csv'],
+#     ['PASSIVE_LONGER_2KMH.csv', 'PASSIVE_LONGER_2KMH_2.csv'],
+#     ['PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+#     ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+# ]
+
 file_paths = [
-    ['PASSIVE_LONGER_1KMH.csv', 'PASSIVE_LONGER_1KMH_2.csv'],
-    ['PASSIVE_LONGER_1.5KMH.csv', 'PASSIVE_LONGER_1.5KMH_2.csv'],
-    ['PASSIVE_LONGER_2KMH.csv', 'PASSIVE_LONGER_2KMH_2.csv'],
-    ['PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+    ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    ['PASSIVE_REPAIR1_2KMH.csv'],
+    ['PASSIVE_REPAIR1_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+    # ['PASSIVE_REPAIR1_3KMH.csv']
     ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
 ]
 
 speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 # Thresholds for each speed. Computed from plot_pressure_debouncing.py
-thresholds = [1, 1, 0.8, 0.8, 0.4]
+thresholds = [0.4, 0.6, 0.8, 0.6, 0.4]
 
 def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, factor=1.0, offset=False):
     avg_data1 = []
@@ -39,7 +48,7 @@ def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, fac
         if i < len(transitions) - 1:
             end_index = transitions[i + 1] - int(PERIOD_OFFSET / dt)
         else:
-            end_index = len(timestamps) - 1
+            end_index = len(timestamps) - 1 - int(PERIOD_OFFSET / dt)
 
         period_data1 = data1[start_index:end_index]
         period_data2 = data2[start_index:end_index]
@@ -48,7 +57,7 @@ def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, fac
         periods_data2.append(period_data2)
 
     # Debounce each period's data and then calculate the average
-    debounced_periods_data1 = [debounce_foot_contact(pd, 3) for pd in periods_data1]
+    debounced_periods_data1 = [debounce_foot_contact(pd, 2) for pd in periods_data1]
     debounced_periods_data2 = [debounce_foot_contact(pd, threshold) for pd in periods_data2]
     # print(debounced_periods_data2)
 
