@@ -16,19 +16,34 @@ PERIOD_OFFSET = 0.5
 
 # speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
-file_paths = [
-    ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
-    ['PASSIVE_REPAIR1_1.5KMH.csv'],
-    ['PASSIVE_REPAIR1_2KMH.csv'],
-    ['PASSIVE_REPAIR1_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
-    # ['PASSIVE_REPAIR1_3KMH.csv']
-    ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
-]
+# file_paths = [
+#     ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+#     ['PASSIVE_REPAIR1_1.5KMH.csv'],
+#     ['PASSIVE_REPAIR1_2KMH.csv'],
+#     ['PASSIVE_REPAIR1_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+#     ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+# ]
 
-speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
+# speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 # Thresholds for each speed. Computed from plot_pressure_debouncing.py
-thresholds = [0.4, 0.6, 0.8, 0.6, 0.4]
+# thresholds = [0.4, 0.6, 0.8, 0.6, 0.4]
+
+# WITH NEW TENDONS
+
+file_paths = [
+    ['PASSIVE_LONGER_NEWTENDONS_1KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_1.5KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_2KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_2.5KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_3KMH.csv']
+]
+
+FRONT_THR = 1
+
+thresholds = [0.5, 0.5, 0.5, 0.8, 0.8]
+
+speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, factor=1.0, offset=False):
     avg_data1 = []
@@ -56,7 +71,7 @@ def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, fac
         periods_data2.append(period_data2)
 
     # Debounce each period's data and then calculate the average
-    debounced_periods_data1 = [debounce_foot_contact(pd, 3) for pd in periods_data1]
+    debounced_periods_data1 = [debounce_foot_contact(pd, FRONT_THR) for pd in periods_data1]
     debounced_periods_data2 = [debounce_foot_contact(pd, threshold) for pd in periods_data2]
 
     # Find the maximum length of periods to align data
@@ -83,15 +98,17 @@ def compute_average_dt(timestamps):
     dt = np.mean(np.diff(timestamps))  # Calculate mean time difference
     return dt
 
-def debounce_foot_contact(data, threshold):
+def debounce_foot_contact(data, threshold, alpha = 1):
     debounced = np.zeros_like(data, dtype=int)
     in_contact = False
     contact_start = -1
+    data_copy = data.copy()
     for i in range(1, len(data)):
-        if not in_contact and data[i] - data[0] > threshold:
+        data_copy[i] = data_copy[i-1]*(1-alpha) + data[i]*alpha
+        if not in_contact and data_copy[i] - data_copy[0] > threshold:
             in_contact = True
             contact_start = i
-        elif in_contact and data[i] - data[0] <= threshold:
+        elif in_contact and data_copy[i] - data_copy[0] <= threshold:
             break
     if contact_start != -1:
         debounced[contact_start:i] = 1
@@ -140,14 +157,17 @@ for i, speed_files in enumerate(file_paths):
     final_avg_data1 = np.mean(all_avg_data1_padded, axis=0)
     final_avg_data2 = np.mean(all_avg_data2_padded, axis=0)
 
+    #PRINT PERIOD
+    print(len(final_avg_data1) * dt)
+
 
     # Compute metrics
     stance_time_front = np.sum(final_avg_data1 > 0.5) * dt
-    # print(stance_time_front)
+    print(stance_time_front)
     stance_time_back = np.sum(final_avg_data2 > 0.5) * dt
     # print(stance_time_back)
     double_support_time = np.sum((final_avg_data1 > 0.5) & (final_avg_data2 > 0.5)) * dt
-    print(double_support_time)
+    # print(double_support_time)
     flight_time = len(final_avg_data1) * dt - stance_time_front - stance_time_back + 2*double_support_time
     # print(flight_time)
     # print(len(final_avg_data1))

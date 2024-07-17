@@ -5,11 +5,21 @@ import matplotlib.pyplot as plt
 # List of treadmill speeds and corresponding CSV files
 speeds = [1, 1.5, 2, 2.5, 3]  # in km/h
 file_paths = {
-    1: ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
-    1.5: ['PASSIVE_REPAIR1_1.5KMH.csv'],
-    2: ['PASSIVE_REPAIR1_2KMH.csv'],
-    2.5: ['PASSIVE_REPAIR1_2.5KMH.csv'],
-    3: ['PASSIVE_REPAIR1_3KMH.csv'],
+    # 1: ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    # 1.5: ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    # 2: ['PASSIVE_REPAIR1_2KMH.csv'],
+    # 2.5: ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    # 3: ['PASSIVE_REPAIR1_3KMH.csv'],
+    # 1: ['PASSIVE_1KMH_NEW_TENDONS2.csv'],
+    # 1.5: ['PASSIVE_1.5KMH_NEW_TENDONS2.csv'],
+    # 2: ['PASSIVE_2KMH_NEW_TENDONS2.csv'],
+    # 2.5: ['PASSIVE_2.5KMH_NEW_TENDONS2.csv'],
+    # 3: ['PASSIVE_3KMH_NEW_TENDONS2.csv']
+    1: ['PASSIVE_LONGER_NEWTENDONS_1KMH.csv'],
+    1.5: ['PASSIVE_LONGER_NEWTENDONS_1.5KMH.csv'],
+    2: ['PASSIVE_LONGER_NEWTENDONS_2KMH.csv'],
+    2.5: ['PASSIVE_LONGER_NEWTENDONS_2.5KMH.csv'],
+    3: ['PASSIVE_LONGER_NEWTENDONS_3KMH.csv']
 }
 
 # Initialize lists to store average periods

@@ -23,7 +23,7 @@ def plot_positions(data, fields_to_plot, boolean_fields, title, y_label):
     plt.title(title)
 
 # File path to the CSV file
-file_path = './PASSIVE_REPAIR1_1.5KMH.csv'
+file_path = './PASSIVE_LONGER_NEWTENDONS_2KMH.csv'
 
 # Read the CSV file once
 data = pd.read_csv(file_path)

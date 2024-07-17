@@ -15,14 +15,16 @@ PERIOD_OFFSET = 0.5  # Offset in seconds before and after foot contact
 # ]
 
 file_paths = [
-    ['PASSIVE_REPAIR1_2.5KMH.csv'],
-    ['PASSIVE_REPAIR1_3KMH.csv'],
+    # ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    # ['PASSIVE_REPAIR1_3KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_1KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_3KMH.csv'],
 ]
 
-speeds = [2.5, 3]  # Corresponding speeds in km/h
+speeds = [1, 1.5]  # Corresponding speeds in km/h
 
 # Thresholds for each speed
-thresholds = [0.4, 0.1]
+thresholds = [0.5, 0.5]
 
 def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, factor=1.0, offset=False):
     avg_data1 = []
@@ -106,15 +108,17 @@ def compute_average_dt(timestamps):
     dt = np.mean(np.diff(timestamps))  # Calculate mean time difference
     return dt
 
-def debounce_foot_contact(data, threshold):
+def debounce_foot_contact(data, threshold, alpha = 0.2):
     debounced = np.zeros_like(data, dtype=int)
     in_contact = False
     contact_start = -1
+    data_copy = data.copy()
     for i in range(1, len(data)):
-        if not in_contact and data[i] - data[0] > threshold:
+        data_copy[i] = data_copy[i-1]*(1-alpha) + data[i]*alpha
+        if not in_contact and data_copy[i] - data_copy[0] > threshold:
             in_contact = True
             contact_start = i
-        elif in_contact and data[i] - data[0] <= threshold:
+        elif in_contact and data_copy[i] - data_copy[0] <= threshold:
             break
     if contact_start != -1:
         debounced[contact_start:i] = 1

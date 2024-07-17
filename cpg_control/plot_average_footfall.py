@@ -14,19 +14,39 @@ PERIOD_OFFSET = 0.5  # Offset in seconds before and after foot contact
 #     ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
 # ]
 
+# file_paths = [
+#     ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+#     ['PASSIVE_REPAIR1_1.5KMH.csv'],
+#     ['PASSIVE_REPAIR1_2KMH.csv'],
+#     ['PASSIVE_REPAIR1_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
+#     # ['PASSIVE_REPAIR1_3KMH.csv']
+#     ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+# ]
+
+# speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
+
+# # Thresholds for each speed. Computed from plot_pressure_debouncing.py
+# thresholds = [0.4, 0.6, 0.8, 0.6, 0.4]
+
+# file_paths = [
+#     ['PASSIVE_1KMH_NEW_TENDONS2.csv'],
+#     ['PASSIVE_1.5KMH_NEW_TENDONS2.csv'],
+#     ['PASSIVE_2KMH_NEW_TENDONS2.csv'],
+#     ['PASSIVE_2.5KMH_NEW_TENDONS2.csv'],
+#     ['PASSIVE_3KMH_NEW_TENDONS2.csv']
+# ]
+
 file_paths = [
-    ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
-    ['PASSIVE_REPAIR1_1.5KMH.csv'],
-    ['PASSIVE_REPAIR1_2KMH.csv'],
-    ['PASSIVE_REPAIR1_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH.csv', 'PASSIVE_LONGER_2.5KMH_2.csv'],
-    # ['PASSIVE_REPAIR1_3KMH.csv']
-    ['PASSIVE_LONGER_3KMH.csv', 'PASSIVE_LONGER_3KMH_2.csv']
+    ['PASSIVE_LONGER_NEWTENDONS_1KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_1.5KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_2KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_2.5KMH.csv'],
+    ['PASSIVE_LONGER_NEWTENDONS_3KMH.csv']
 ]
 
-speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
+thresholds = [0.5, 0.5, 0.5, 0.8, 0.8]
 
-# Thresholds for each speed. Computed from plot_pressure_debouncing.py
-thresholds = [0.4, 0.6, 0.8, 0.6, 0.4]
+speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, factor=1.0, offset=False):
     avg_data1 = []
@@ -57,7 +77,7 @@ def compute_average_data(timestamps, foot_contact1, data1, data2, threshold, fac
         periods_data2.append(period_data2)
 
     # Debounce each period's data and then calculate the average
-    debounced_periods_data1 = [debounce_foot_contact(pd, 2) for pd in periods_data1]
+    debounced_periods_data1 = [debounce_foot_contact(pd, 1) for pd in periods_data1]
     debounced_periods_data2 = [debounce_foot_contact(pd, threshold) for pd in periods_data2]
     # print(debounced_periods_data2)
 
@@ -85,15 +105,17 @@ def compute_average_dt(timestamps):
     dt = np.mean(np.diff(timestamps))  # Calculate mean time difference
     return dt
 
-def debounce_foot_contact(data, threshold):
+def debounce_foot_contact(data, threshold, alpha = 1):
     debounced = np.zeros_like(data, dtype=int)
     in_contact = False
     contact_start = -1
+    data_copy = data.copy()
     for i in range(1, len(data)):
-        if not in_contact and data[i] - data[0] > threshold:
+        data_copy[i] = data_copy[i-1]*(1-alpha) + data[i]*alpha
+        if not in_contact and data_copy[i] - data_copy[0] > threshold:
             in_contact = True
             contact_start = i
-        elif in_contact and data[i] - data[0] <= threshold:
+        elif in_contact and data_copy[i] - data_copy[0] <= threshold:
             break
     if contact_start != -1:
         debounced[contact_start:i] = 1

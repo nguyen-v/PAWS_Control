@@ -4,7 +4,7 @@ import numpy as np
 from HopfNetwork import HopfNetwork
 from SineNetwork import SineNetwork
 
-LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM", "STIFF"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM"]
 
 class PAWS:
     def __init__(self,
@@ -16,7 +16,7 @@ class PAWS:
                  controller_ids = np.array([1, 2, 3, 4])
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 102, 104])
+        self.foot_contact_thr = np.array([104, 104, 101, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -101,23 +101,64 @@ class PAWS:
                                  [0,   0,   0,   0]]) # 1    1    1    1
             
         elif self.mode == "AMPLIFY_CUSTOM":
-            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+            # self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+            #                      [0,   0,   0,   0],  # 0    0    0    1
+            #                      [1,   0,   -1,   0],  # 0    0    1    0
+            #                       # -1  -1: RR hits ground
+            #                       # -1   0: unregular gait, fails easily
+            #                       # -1   1: RR folds when in contact -> BAD
+            #                       # 0    -1: better
+            #                       # 0    1: RR folds when hitting the ground, which acts as a spring (in a bad way)
+            #                       # 1   -1: bounding
+            #                       # 1   0: no significant changes
+            #                       # 1   1: RR folds when in contact -> BAD
+            #                      [0,   0,   0,   0],  # 0    0    1    1
+            #                      [0,   0,   0,   0],  # 0    1    0    0
+            #                      [0,   0,   0,   0],  # 0    1    0    1
+            #                      [0,   0,   0,   0],  # 0    1    1    0
+            #                      [0,   0,   0,   0],  # 0    1    1    1
+            #                      [-1,   0,   0,   0],  # 1    0    0    0  
+            #                      # -1 -1: high jumps increasingly higher
+            #                      # -1  0: RR lifts higher -> GOOD
+            #                      # -1  1: RR lifts higher but fails
+            #                      #  0  -1: JUMPS
+            #                      #  0  1: RR hits ground
+            #                      #  1 -1: FR exerts more force on the ground, jumps a bit higher. RR lifts higher by pushing harder -> JUMPS
+            #                      #  1  0: FR exerts more force on the ground, jumps a bit higher
+            #                      #  1  1: RR hits ground
+            #                      [0,   0,   0,   0],  # 1    0    0    1
+            #                      [1,   0,   -1,   0],  # 1    0    1    0 
+            #                      # -1 -1: brings RR faster but hits ground ?
+            #                      # -1  0  brings RR faster but hits ground
+            #                      # -1  1  brings RR faster but hits ground
+            #                      #  0  -1 
+            #                      #  0  1  no improvement
+            #                      # 1  -1  better
+            #                      # 1   0  better but no improvement on RR
+            #                      # 1   1  RR hits ground
+            #                      [0,   0,   0,   0],  # 1    0    1    1
+            #                      [0,   0,   0,   0],  # 1    1    0    0
+            #                      [0,   0,   0,   0],  # 1    1    0    1
+            #                      [0,   0,   0,   0],  # 1    1    1    0
+            #                      [0,   0,   0,   0]]) # 1    1    1    1
+                        self.LUT = np.array([
+                                [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [1,   0,   -1,   0],  # 0    0    1    0
-                                  # -1  -1: RR hits ground
-                                  # -1   0: unregular gait, fails easily
-                                  # -1   1: RR folds when in contact -> BAD
-                                  # 0    -1: better
-                                  # 0    1: RR folds when hitting the ground, which acts as a spring (in a bad way)
+                                 [-2,   0,   1,   0],  # 0    0    1    0
+                                  # -1  -1:both feet move away from center when hitting RR -> BAD
+                                  # -1   0: both feet move away from center when hitting RR, and no force on front knee -> BAD
+                                  # -1   1: Crouches on contact, looks like the start of a jump
+                                  # 0    -1: Crouches on contact with both feet straight w.r.t. previous joint
+                                  # 0    1: RR folds when hitting the ground, which hits the ground
                                   # 1   -1: bounding
                                   # 1   0: no significant changes
                                   # 1   1: RR folds when in contact -> BAD
-                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [-2,   0,   1,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [-1,   0,   0,   0],  # 1    0    0    0  
+                                 [0,   0,   0,   0],  # 1    0    0    0  
                                  # -1 -1: high jumps increasingly higher
                                  # -1  0: RR lifts higher -> GOOD
                                  # -1  1: RR lifts higher but fails
@@ -126,8 +167,8 @@ class PAWS:
                                  #  1 -1: FR exerts more force on the ground, jumps a bit higher. RR lifts higher by pushing harder -> JUMPS
                                  #  1  0: FR exerts more force on the ground, jumps a bit higher
                                  #  1  1: RR hits ground
-                                 [0,   0,   0,   0],  # 1    0    0    1
-                                 [1,   0,   -1,   0],  # 1    0    1    0 
+                                 [-2,   0,   1,   0],  # 1    0    0    1
+                                 [0,   0,   0,   0],  # 1    0    1    0 
                                  # -1 -1: brings RR faster but hits ground ?
                                  # -1  0  brings RR faster but hits ground
                                  # -1  1  brings RR faster but hits ground
@@ -160,41 +201,30 @@ class PAWS:
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1
         elif self.mode == "CUSTOM":
-            self.LUT = np.array([[0.01,   0,   0.01,   0],  # 0    0    0    0
+            self.LUT = np.array([
+                                # [0.01,   0,   0.01,   0],  # 0    0    0    0
+                                 [0.01,   0,   0.1,   0], # new tendons
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [-0.7,  0,  -0.7,   0],  # 0    0    1    0
+                                 [0.7,  0,  -0.7,   0],  # 0    0    1    0 #new tendons
+                                #  [-0.7,  0,  -0.7,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [1,   0,   2,   0],  # 1    0    0    0
+                                #  [1,   0,   2,   0],  # 1    0    0    0
+                                [-0.7,   0,   0.7,   0],  # 1    0    0    0
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [-0.7,   0,   -0.7,   0],  # 1    0    1    0
+                                #  [-0.7,   0,   -0.7,   0],  # 1    0    1    0
+                                [0.7,   0,   0.7,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
                                  [0,   0,   0,   0],  # 1    1    1    0
-                                 [0,   0,   0,   0]]) # 1    1    1    1         
-        elif self.mode == "STIFF":
-            self.LUT = np.array([[0.01,   0,   0.01,   0],  # 0    0    0    0
-                                 [0,   0,   0,   0],  # 0    0    0    1
-                                 [0.01,  0,  0.01,   0],  # 0    0    1    0
-                                 [0,   0,   0,   0],  # 0    0    1    1
-                                 [0,   0,   0,   0],  # 0    1    0    0
-                                 [0,   0,   0,   0],  # 0    1    0    1
-                                 [0,   0,   0,   0],  # 0    1    1    0
-                                 [0,   0,   0,   0],  # 0    1    1    1
-                                 [0.01,   0,   0.01,   0],  # 1    0    0    0
-                                 [0,   0,   0,   0],  # 1    0    0    1
-                                 [0.01,   0,   0.01,   0],  # 1    0    1    0
-                                 [0,   0,   0,   0],  # 1    0    1    1
-                                 [0,   0,   0,   0],  # 1    1    0    0
-                                 [0,   0,   0,   0],  # 1    1    0    1
-                                 [0,   0,   0,   0],  # 1    1    1    0
-                                 [0,   0,   0,   0]]) # 1    1    1    1     
+                                 [0,   0,   0,   0]]) # 1    1    1    1          
         else:
-            print("Mode not supported. Not setting LUT.")
+            # print("Mode not supported. Not setting LUT.")
+            pass
 
     # Get index for LUT based on foot contact.
     def get_LUT_index(self):
@@ -257,7 +287,7 @@ class PAWS:
         self.update_foot_contact()
 
         for i in self.controller_ids:
-                
+            position = np.zeros(self.num_controllers)
             # Get commands
             if self.mode in LUT_MODES:
                 position, max_torque = self.get_commands()
@@ -268,6 +298,9 @@ class PAWS:
                 position = [0, 0, 0, 0]
             elif self.mode == "SINE":
                 position = self.sine.update(self.foot_contact, timestamp)
+                max_torque = self.max_torque
+            elif self.mode == "STIFF":
+                position = [0.01, 0, 0.01, 0]
                 max_torque = self.max_torque
             
             if position[i-1] == 0 and self.mode != "SINE":

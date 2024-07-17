@@ -16,12 +16,17 @@ PERIOD_OFFSET = 0.35  # Offset in seconds before and after foot contact
 # speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
 file_paths = {
-    1: ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
-    # 1: ['PASSIVE_20240710_151048.csv'],
-    1.5: ['PASSIVE_REPAIR1_1.5KMH.csv'],
-    2: ['PASSIVE_REPAIR1_2KMH.csv'],
-    2.5: ['PASSIVE_REPAIR1_2.5KMH.csv'],
-    3: ['PASSIVE_REPAIR1_3KMH.csv']
+    # 1: ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    1: ['PASSIVE_LONGER_NEWTENDONS_1KMH.csv'],
+    # 1.5: ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    1.5: ['PASSIVE_LONGER_NEWTENDONS_1.5KMH.csv'],
+    # 2: ['PASSIVE_REPAIR1_2KMH.csv'],
+    2: ['PASSIVE_LONGER_NEWTENDONS_2KMH.csv'],
+    # 2.5: ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    2.5: ['PASSIVE_LONGER_NEWTENDONS_2.5KMH.csv'],
+    # 3: ['PASSIVE_REPAIR1_3KMH.csv']
+    3: ['PASSIVE_LONGER_NEWTENDONS_3KMH.csv']
+    # 3: ['PASSIVE_3KMH_NEW_TENDONS2.csv']
 }
 speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
 
@@ -126,7 +131,7 @@ for idx, speed in enumerate(speeds):
     periods = np.arange(len(avg_data1)) * dt  # Time in seconds (dynamic timestep)
 
     # Crop data to x = 0 to 1
-    mask = (periods >= 0) & (periods <= 1)
+    mask = (periods >= 0) & (periods <= 1.3)
     periods_crop = periods[mask]
     avg_data1_crop = avg_data1[mask]
     avg_data2_crop = avg_data2[mask]

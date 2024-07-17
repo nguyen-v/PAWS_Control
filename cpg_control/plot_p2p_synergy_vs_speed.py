@@ -8,12 +8,16 @@ reduction_ratio = 5
 
 # File paths and corresponding treadmill speeds
 file_paths = {
-    "1 km/h": ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
-    "1.5 km/h": ['PASSIVE_REPAIR1_1.5KMH.csv'],
-    "2 km/h": ['PASSIVE_REPAIR1_2KMH.csv'],
-    "2.5 km/h": ['PASSIVE_REPAIR1_2.5KMH.csv'],
-    "3 km/h": ['PASSIVE_REPAIR1_3KMH.csv']
-    # "3.5 km/h": ["PASSIVE_3.5_LONG.csv", "ANOTHER_3.5KMH.csv"]
+    # "1 km/h": ['PASSIVE_REPAIR1_1KMH.csv', 'PASSIVE_REPAIR1_1KMH_2.csv'],
+    # "1.5 km/h": ['PASSIVE_REPAIR1_1.5KMH.csv'],
+    # "2 km/h": ['PASSIVE_REPAIR1_2KMH.csv'],
+    # "2.5 km/h": ['PASSIVE_REPAIR1_2.5KMH.csv'],
+    # "3 km/h": ['PASSIVE_REPAIR1_3KMH.csv']
+    "1 km/h": ['PASSIVE_1KMH_NEW_TENDONS2.csv'],
+    "1.5 km/h": ['PASSIVE_1.5KMH_NEW_TENDONS2.csv'],
+    "2 km/h": ['PASSIVE_2KMH_NEW_TENDONS2.csv'],
+    "2.5 km/h": ['PASSIVE_2.5KMH_NEW_TENDONS2.csv'],
+    "3 km/h": ['PASSIVE_3KMH_NEW_TENDONS2.csv']
 }
 
 speeds = [1, 1.5, 2, 2.5, 3]  # Corresponding speeds in km/h
