@@ -83,7 +83,7 @@ def compute_average_dt(timestamps):
     return dt
 
 # Iterate over each speed and process the corresponding files
-fig, axs = plt.subplots(1, 1, figsize=(12, 12), sharex=True)
+fig, axs = plt.subplots(1, 1, figsize=(6, 5), sharex=True)
 
 # Variables to store global y-axis limits
 global_min = float('inf')
@@ -167,11 +167,11 @@ for idx, speed in enumerate(speeds):
     sine2[periods_crop < t_off[1]] = 0
     sine2[periods_crop > period[1]+t_off[1]] = 0
     # Plotting on subplots
-    axs.plot(periods_crop, avg_data1_crop, color='red', label='Average Synergy 1', alpha=0.7)
-    axs.plot(periods_crop, avg_data2_crop, color='gray', label='Average Synergy 2', alpha=0.7)
+    axs.plot(periods_crop, avg_data1_crop, color='red', label='Average Synergy 1', alpha=0.3, linewidth = 3)
+    axs.plot(periods_crop, avg_data2_crop, color='black', label='Average Synergy 2', alpha=0.3, linewidth = 3)
 
-    axs.plot(periods_crop, sine1, color='orange', label='Synergy fit 1',linestyle='dashed')
-    axs.plot(periods_crop, sine2, color='black', label='Synergy fit 2',linestyle='dashed')
+    axs.plot(periods_crop, sine1, color='red', label='Synergy fit 1',linestyle='dashed', linewidth = 3)
+    axs.plot(periods_crop, sine2, color='black', label='Synergy fit 2',linestyle='dashed', linewidth = 3)
 
     axs.set_title(f'Treadmill speed {speed} km/h', fontsize=14)
     axs.grid(True)
@@ -183,6 +183,8 @@ axs.set_xlabel('Time [seconds]', fontsize=12)
 
 # Common Y-axis label
 fig.text(0.04, 0.5, 'Synergy [deg]', va='center', rotation='vertical', fontsize=12)
+
+axs.set_ylim(-80, 30)
 
 # Adjust layout
 plt.tight_layout(rect=[0.05, 0.05, 1, 1])
