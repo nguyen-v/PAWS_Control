@@ -4,7 +4,7 @@ import numpy as np
 from HopfNetwork import HopfNetwork
 from SineNetwork import SineNetwork
 
-LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM", "LOAD"]
 
 class PAWS:
     def __init__(self,
@@ -13,10 +13,12 @@ class PAWS:
                  accel_limit = 30,
                  velocity_limit = 20,
                  max_torque = 3,
-                 controller_ids = np.array([1, 2, 3, 4])
+                 controller_ids = np.array([1, 2, 3, 4]),
+                 once = False,
+                 initial_jumps = 0,
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 101, 104])
+        self.foot_contact_thr = np.array([94, 104, 102, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -27,6 +29,9 @@ class PAWS:
         self.max_torque = max_torque
         self.controller_ids = controller_ids
         self.LUT = np.zeros((2**self.num_controllers, self.num_controllers))
+        self.jump_counts = 0
+        self.once = once
+        self.initial_jumps = initial_jumps
         if self.mode in LUT_MODES:
             self.set_LUT()
         if self.mode == "CPG":
@@ -141,10 +146,11 @@ class PAWS:
             #                      [0,   0,   0,   0],  # 1    1    0    1
             #                      [0,   0,   0,   0],  # 1    1    1    0
             #                      [0,   0,   0,   0]]) # 1    1    1    1
+            # similar to sine
                         self.LUT = np.array([
                                 [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [-2,   0,   1,   0],  # 0    0    1    0
+                                 [-1,   0,   -0.5,   0],  # 0    0    1    0
                                   # -1  -1:both feet move away from center when hitting RR -> BAD
                                   # -1   0: both feet move away from center when hitting RR, and no force on front knee -> BAD
                                   # -1   1: Crouches on contact, looks like the start of a jump
@@ -153,12 +159,12 @@ class PAWS:
                                   # 1   -1: bounding
                                   # 1   0: no significant changes
                                   # 1   1: RR folds when in contact -> BAD
-                                 [-2,   0,   1,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [0,   0,   0,   0],  # 1    0    0    0  
+                                 [-1,   0,   0.5,   0],  # 1    0    0    0  
                                  # -1 -1: high jumps increasingly higher
                                  # -1  0: RR lifts higher -> GOOD
                                  # -1  1: RR lifts higher but fails
@@ -167,8 +173,8 @@ class PAWS:
                                  #  1 -1: FR exerts more force on the ground, jumps a bit higher. RR lifts higher by pushing harder -> JUMPS
                                  #  1  0: FR exerts more force on the ground, jumps a bit higher
                                  #  1  1: RR hits ground
-                                 [-2,   0,   1,   0],  # 1    0    0    1
-                                 [0,   0,   0,   0],  # 1    0    1    0 
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [-1,   0,   0.5,   0],  # 1    0    1    0 
                                  # -1 -1: brings RR faster but hits ground ?
                                  # -1  0  brings RR faster but hits ground
                                  # -1  1  brings RR faster but hits ground
@@ -184,17 +190,18 @@ class PAWS:
                                  [0,   0,   0,   0]]) # 1    1    1    1
         
         elif self.mode == "JUMP":
-            self.LUT = np.array([[0,   0,   0,   0],  # 0    0    0    0
+                        self.LUT = np.array([
+                                [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [-1,  0,  -1,   0],  # 0    0    1    0
+                                 [-1,   0,   0.5,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [1,   0,   0,   0],  # 1    0    0    0  # 1 -1 BEFORE
+                                 [-1,   0,   0.5,   0],  # 1    0    0    0  
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [0,   0,   -1,   0],  # 1    0    1    0
+                                 [-1,   0,   -0.5,   0],  # 1    0    1    0 
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
@@ -205,7 +212,7 @@ class PAWS:
                                 # [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0.01,   0,   0.1,   0], # new tendons
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [0.7,  0,  -0.7,   0],  # 0    0    1    0 #new tendons
+                                 [0,  0,  0,   0],  # 0    0    1    0 #new tendons
                                 #  [-0.7,  0,  -0.7,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
@@ -213,15 +220,37 @@ class PAWS:
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
                                 #  [1,   0,   2,   0],  # 1    0    0    0
-                                [-0.7,   0,   0.7,   0],  # 1    0    0    0
+                                [1,   0,   -1,   0],  # 1    0    0    0
                                  [0,   0,   0,   0],  # 1    0    0    1
                                 #  [-0.7,   0,   -0.7,   0],  # 1    0    1    0
-                                [0.7,   0,   0.7,   0],  # 1    0    1    0
+                                [1,   0,   -1.5,   0],  # 1    0    1    0
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
                                  [0,   0,   0,   0],  # 1    1    1    0
-                                 [0,   0,   0,   0]]) # 1    1    1    1          
+                                 [0,   0,   0,   0]]) # 1    1    1    1         
+        elif self.mode == "LOAD":
+            self.LUT = np.array([
+                                # [0.01,   0,   0.01,   0],  # 0    0    0    0
+                                 [0.01,   0,   0.1,   0], # new tendons
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [0,  0,  0,   0],  # 0    0    1    0 #new tendons
+                                #  [-0.7,  0,  -0.7,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                #  [1,   0,   2,   0],  # 1    0    0    0
+                                [0,   0,   0,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                #  [-0.7,   0,   -0.7,   0],  # 1    0    1    0
+                                [0,   0,   -1.5,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1      
         else:
             # print("Mode not supported. Not setting LUT.")
             pass
@@ -284,7 +313,12 @@ class PAWS:
     async def update(self, timestamp):
 
         # Update foot contact
+        prev_foot_contact = self.foot_contact.copy()
         self.update_foot_contact()
+
+        if prev_foot_contact[0] == False and self.foot_contact[0] == True:
+            self.jump_counts += 1
+            print("Jump counts: ", self.jump_counts)
 
         for i in self.controller_ids:
             position = np.zeros(self.num_controllers)
@@ -300,7 +334,7 @@ class PAWS:
                 position = self.sine.update(self.foot_contact, timestamp)
                 max_torque = self.max_torque
             elif self.mode == "STIFF":
-                position = [0.01, 0, 0.01, 0]
+                position = [1, 0, 0.01, 0]
                 max_torque = self.max_torque
             
             if position[i-1] == 0 and self.mode != "SINE":
@@ -308,6 +342,15 @@ class PAWS:
 
             else:
                 await self.controllers[i-1].set_recapture_position_velocity()
+
+            if self.jump_counts < self.initial_jumps:
+                max_torque = 0
+
+            if self.once:
+                if self.jump_counts > self.initial_jumps + 1:
+                    # print("going back to passive mode")
+                    position = [0, 0, 0, 0]
+                    max_torque = 0
 
             self.states[i-1] = await self.controllers[i-1].set_position(
                 position=position[i-1],
