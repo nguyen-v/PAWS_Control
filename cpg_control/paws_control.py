@@ -8,8 +8,8 @@ import numpy as np
 
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
-MODE = "AMPLIFY_CUSTOM"
-LOG_DATA = False
+MODE = "LOAD"
+LOG_DATA = True
 PLOT_DATA = True
 RECOVERY = False
 TRN_TO_RAD = 2*np.pi

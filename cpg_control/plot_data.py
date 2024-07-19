@@ -23,22 +23,22 @@ def plot_positions(data, fields_to_plot, boolean_fields, title, y_label):
     plt.title(title)
 
 # File path to the CSV file
-file_path = './PASSIVE_LONGER_NEWTENDONS_2KMH.csv'
+file_path = './LOAD_3NM_0.5KG.csv'
 
 # Read the CSV file once
 data = pd.read_csv(file_path)
 
 # Create plot for positions
-plot_positions(data, ['position 1', 'position 3'], ['foot_contact 1', 'foot_contact 3'], 'Positions and Foot Contacts Over Time', 'rad')
+# plot_positions(data, ['position 1', 'position 3'], ['foot_contact 1', 'foot_contact 3'], 'Positions and Foot Contacts Over Time', 'rad')
 
 # # Create plot for velocities
 # plot_positions(data, ['velocity 1', 'velocity 3'], ['foot_contact 1', 'foot_contact 3'], 'Velocities and Foot Contacts Over Time', 'rad/s')
 
 # # Create plot for power
-# plot_positions(data, ['power 1', 'power 3'], ['foot_contact 1', 'foot_contact 3'], 'Power and Foot Contacts Over Time', 'W')
+plot_positions(data, ['power 1', 'power 3'], ['foot_contact 1', 'foot_contact 3'], 'Power and Foot Contacts Over Time', 'W')
 
 # Create plot for pressures
-plot_positions(data, ['pressure 1', 'pressure 3'], ['foot_contact 1', 'foot_contact 3'], 'Pressures and Foot Contacts Over Time', 'Analog readings')
+# plot_positions(data, ['pressure 1', 'pressure 3'], ['foot_contact 1', 'foot_contact 3'], 'Pressures and Foot Contacts Over Time', 'Analog readings')
 
 # Show all plots at once
 plt.show()

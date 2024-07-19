@@ -18,7 +18,7 @@ class PAWS:
                  initial_jumps = 0,
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([94, 104, 102, 104])
+        self.foot_contact_thr = np.array([104, 104, 104, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -190,18 +190,35 @@ class PAWS:
                                  [0,   0,   0,   0]]) # 1    1    1    1
         
         elif self.mode == "JUMP":
+                        # self.LUT = np.array([
+                        #         [0.01,   0,   0.01,   0],  # 0    0    0    0
+                        #          [0,   0,   0,   0],  # 0    0    0    1
+                        #          [-1,   0,   -0.5,   0],  # 0    0    1    0
+                        #          [0,   0,   0,   0],  # 0    0    1    1
+                        #          [0,   0,   0,   0],  # 0    1    0    0
+                        #          [0,   0,   0,   0],  # 0    1    0    1
+                        #          [0,   0,   0,   0],  # 0    1    1    0
+                        #          [0,   0,   0,   0],  # 0    1    1    1
+                        #          [-1,   0,   0.5,   0],  # 1    0    0    0  
+                        #          [0,   0,   0,   0],  # 1    0    0    1
+                        #          [-1,   0,   -1,   0],  # 1    0    1    0 
+                        #          [0,   0,   0,   0],  # 1    0    1    1
+                        #          [0,   0,   0,   0],  # 1    1    0    0
+                        #          [0,   0,   0,   0],  # 1    1    0    1
+                        #          [0,   0,   0,   0],  # 1    1    1    0
+                        #          [0,   0,   0,   0]]) # 1    1    1    1
                         self.LUT = np.array([
                                 [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [-1,   0,   0.5,   0],  # 0    0    1    0
+                                 [1,   0,   -1,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [-1,   0,   0.5,   0],  # 1    0    0    0  
+                                 [0,   0,   0,   0],  # 1    0    0    0  
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [-1,   0,   -0.5,   0],  # 1    0    1    0 
+                                 [1,   0,   -1,   0],  # 1    0    1    0 
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
@@ -347,7 +364,7 @@ class PAWS:
                 max_torque = 0
 
             if self.once:
-                if self.jump_counts > self.initial_jumps + 1:
+                if self.jump_counts > self.initial_jumps + 3:
                     # print("going back to passive mode")
                     position = [0, 0, 0, 0]
                     max_torque = 0

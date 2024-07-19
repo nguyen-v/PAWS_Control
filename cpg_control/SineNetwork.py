@@ -46,10 +46,10 @@ class SineNetwork:
     def update(self, foot_contact, timestamp):
         cmd_angle = np.zeros(4)
 
-        if foot_contact[2] and not self.previous_foot_contact:
+        if foot_contact[0] and not self.previous_foot_contact:
             self.t_start = timestamp
 
-        self.previous_foot_contact = foot_contact[2]
+        self.previous_foot_contact = foot_contact[0]
 
         if self.t_start is not None:
             t = timestamp
