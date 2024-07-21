@@ -28,13 +28,13 @@ def plot_positions(data, fields_to_plot, boolean_fields, title, y_label, factor 
     plt.ylabel(y_label)
     # plt.xlim(data['timestamp'][640], data['timestamp'][750]) # LUT SINE
     # plt.xlim(data['timestamp'][340], data['timestamp'][425]) # SINE
-    plt.xlim(data['timestamp'][420], data['timestamp'][530]) # LOAD
+    # plt.xlim(data['timestamp'][420], data['timestamp'][530]) # LOAD
     plt.legend(['Synergy 1', 'Synergy 2', 'Front foot contact', 'Rear foot contact'], loc='upper right')
     # plt.legend(['Motor command 1', 'Motor command 2', 'Front foot contact', 'Rear foot contact'], loc='upper right')
     plt.title(title)
 
 # File path to the CSV file
-file_path = './LOAD_0.75KG.csv'
+file_path = './PASSIVE_FAIL_FRONT_LEG.csv'
 # file_path = './SINE_1.5KMH.csv'
 
 # Read the CSV file once

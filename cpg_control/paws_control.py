@@ -8,7 +8,7 @@ import numpy as np
 
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
-MODE = "PERTURBATION"
+MODE = "AMPLIFY_CUSTOM"
 LOG_DATA = False
 PLOT_DATA = True
 RECOVERY = False

@@ -4,7 +4,7 @@ import numpy as np
 from HopfNetwork import HopfNetwork
 from SineNetwork import SineNetwork
 
-LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM", "LOAD", "PERTURBATION", "PERTURBATION_LOAD"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "JUMP2", "CUSTOM", "LOAD", "PERTURBATION", "PERTURBATION_LOAD"]
 
 class PAWS:
     def __init__(self,
@@ -20,7 +20,7 @@ class PAWS:
                  period = 1
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([101, 104, 103, 104])
+        self.foot_contact_thr = np.array([102, 104, 103, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -47,6 +47,7 @@ class PAWS:
     # Each entry in the LUT is the position command for the corresponding controller
     # Order is FR, FL, RR, RL
     def set_LUT(self):
+        print("Setting LUT for mode: ", self.mode)
         if self.mode == "AMPLIFY":              
 
             #                    Commanded positions   Foot contact states
@@ -149,7 +150,7 @@ class PAWS:
             #                      [0,   0,   0,   0],  # 1    1    1    0
             #                      [0,   0,   0,   0]]) # 1    1    1    1
             # similar to sine
-                        self.LUT = np.array([
+            self.LUT = np.array([
                                 [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
                                  [-1,   0,   -0.5,   0],  # 0    0    1    0
@@ -195,32 +196,50 @@ class PAWS:
                         # self.LUT = np.array([
                         #         [0.01,   0,   0.01,   0],  # 0    0    0    0
                         #          [0,   0,   0,   0],  # 0    0    0    1
-                        #          [-1,   0,   -0.5,   0],  # 0    0    1    0
+                        #          [-0.5,   0,   1,   0],  # 0    0    1    0
                         #          [0,   0,   0,   0],  # 0    0    1    1
                         #          [0,   0,   0,   0],  # 0    1    0    0
                         #          [0,   0,   0,   0],  # 0    1    0    1
                         #          [0,   0,   0,   0],  # 0    1    1    0
                         #          [0,   0,   0,   0],  # 0    1    1    1
-                        #          [-1,   0,   0.5,   0],  # 1    0    0    0  
+                        #          [1,   0,   -0.5,   0],  # 1    0    0    0  
                         #          [0,   0,   0,   0],  # 1    0    0    1
-                        #          [-1,   0,   -1,   0],  # 1    0    1    0 
+                        #          [1,   0,   -0.5,   0],  # 1    0    1    0 
                         #          [0,   0,   0,   0],  # 1    0    1    1
                         #          [0,   0,   0,   0],  # 1    1    0    0
                         #          [0,   0,   0,   0],  # 1    1    0    1
                         #          [0,   0,   0,   0],  # 1    1    1    0
                         #          [0,   0,   0,   0]]) # 1    1    1    1
-                        self.LUT = np.array([
+            self.LUT = np.array([
                                 [0.01,   0,   0.01,   0],  # 0    0    0    0
                                  [0,   0,   0,   0],  # 0    0    0    1
-                                 [1,   0,   -1,   0],  # 0    0    1    0
+                                 [0.01,   0,   -2,   0],  # 0    0    1    0
                                  [0,   0,   0,   0],  # 0    0    1    1
                                  [0,   0,   0,   0],  # 0    1    0    0
                                  [0,   0,   0,   0],  # 0    1    0    1
                                  [0,   0,   0,   0],  # 0    1    1    0
                                  [0,   0,   0,   0],  # 0    1    1    1
-                                 [0,   0,   0,   0],  # 1    0    0    0  
+                                 [0,   0,   -2,   0],  # 1    0    0    0  
                                  [0,   0,   0,   0],  # 1    0    0    1
-                                 [1,   0,   -1,   0],  # 1    0    1    0 
+                                 [0,   0,   -2,   0],  # 1    0    1    0 
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+        elif self.mode == "JUMP2":
+            self.LUT = np.array([
+                                [0.7,   0,   -0.7,   0],  # 0    0    0    0
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [0,   0,   0,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [-1,   0,   -2,   0],  # 1    0    0    0  
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [-1,   0,   -2,   0],  # 1    0    1    0 
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1
@@ -316,7 +335,7 @@ class PAWS:
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1
         else:
-            # print("Mode not supported. Not setting LUT.")
+            print("Mode not supported. Not setting LUT.")
             pass
 
     # Get index for LUT based on foot contact.
