@@ -8,9 +8,9 @@ PERIOD_OFFSET = 0.35  # Offset in seconds before and after foot contact
 file_paths = {
     0.25: ['LOAD_0.25KG.csv'],
     0.50: ['LOAD_0.5KG.csv'],
-    0.75: ['LOAD_0.75KG.csv'],
+    0.75: ['LOAD_0.75KG_2.csv'],
     1.00: ['LOAD_1KG.csv'],
-    1.25: ['LOAD_1.25KG.csv'],
+    1.25: ['LOAD_1.25KG_2.csv'],
     1.50: ['LOAD_1.5KG.csv'],
     1.75: ['LOAD_1.75KG.csv']
 }

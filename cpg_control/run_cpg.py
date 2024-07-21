@@ -9,7 +9,7 @@ import numpy as np
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
 MODE = "SINE"
-LOG_DATA = False
+LOG_DATA = True
 PLOT_DATA = True
 RECOVERY = False
 TRN_TO_RAD = 2*np.pi
@@ -40,7 +40,7 @@ async def motor_control(logger, paws):
 
 async def main():
     # Create new PAWS object
-    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=3)
+    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=3, sync_pressure = False, period = 1.6)
     await paws.create_controllers()
     await paws.set_zero_position()
 

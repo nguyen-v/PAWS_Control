@@ -4,7 +4,7 @@ import numpy as np
 from HopfNetwork import HopfNetwork
 from SineNetwork import SineNetwork
 
-LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM", "LOAD"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "CUSTOM", "LOAD", "PERTURBATION", "PERTURBATION_LOAD"]
 
 class PAWS:
     def __init__(self,
@@ -16,9 +16,11 @@ class PAWS:
                  controller_ids = np.array([1, 2, 3, 4]),
                  once = False,
                  initial_jumps = 0,
+                 sync_pressure = True,
+                 period = 1
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([104, 104, 104, 104])
+        self.foot_contact_thr = np.array([101, 104, 103, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -37,7 +39,7 @@ class PAWS:
         if self.mode == "CPG":
             self.hopf = HopfNetwork()
         if self.mode == "SINE":
-            self.sine = SineNetwork()
+            self.sine = SineNetwork(sync_pressure=sync_pressure, period=period)
         self.states = [None, None, None, None]
 
     # Set LUT
@@ -268,6 +270,51 @@ class PAWS:
                                  [0,   0,   0,   0],  # 1    1    0    1
                                  [0,   0,   0,   0],  # 1    1    1    0
                                  [0,   0,   0,   0]]) # 1    1    1    1      
+        elif self.mode == "PERTURBATION":
+            self.LUT = np.array([
+                                # [0.01,   0,   0.01,   0],  # 0    0    0    0
+                                 [-.5,   0,   .5,   0], # new tendons
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [1,  0,  0,   0],  # 0    0    1    0 # [1000] works too but the -1 helps the front leg
+                                #  [-0.7,  0,  -0.7,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                #  [1,   0,   2,   0],  # 1    0    0    0
+                                [0,   0,   0,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                #  [-0.7,   0,   -0.7,   0],  # 1    0    1    0
+                                [0,   0,  0,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+            
+        elif self.mode == "PERTURBATION_LOAD":
+            self.LUT = np.array([
+                                # [0.01,   0,   0.01,   0],  # 0    0    0    0
+                                 [-.5,   0,   .5,   0], # new tendons
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [1,  0,  0,   0],  # 0    0    1    0 # [1000] works too but the -1 helps the front leg
+                                #  [-0.7,  0,  -0.7,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                #  [1,   0,   2,   0],  # 1    0    0    0
+                                [0,   0,   0,   0],  # 1    0    0    0
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                #  [-0.7,   0,   -0.7,   0],  # 1    0    1    0
+                                [0,   0,  -1,   0],  # 1    0    1    0
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
         else:
             # print("Mode not supported. Not setting LUT.")
             pass

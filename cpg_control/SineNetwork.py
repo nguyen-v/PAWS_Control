@@ -4,7 +4,7 @@ DEG_TO_TRN = 1/360
 AMPLIFIER = 6
 
 class SineNetwork:
-    def __init__(self, amp=None, omega=None, theta=None, offset=None, t_off=None):
+    def __init__(self, amp=None, omega=None, theta=None, offset=None, t_off=None, sync_pressure = True, period = 1):
         if amp is None:
             # amp = [40*DEG_TO_TRN, 0*DEG_TO_TRN, 20*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
             # amp = [AMPLIFIER*77*DEG_TO_TRN, 0*DEG_TO_TRN, AMPLIFIER*29*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
@@ -40,14 +40,20 @@ class SineNetwork:
         self.theta = theta
         self.offset = offset
         self.t_off = t_off
-        self.t_start = None
+        self.t_start = 0
+        self.sync_pressure = sync_pressure
+        self.period = period
         self.previous_foot_contact = False
 
     def update(self, foot_contact, timestamp):
         cmd_angle = np.zeros(4)
 
-        if foot_contact[0] and not self.previous_foot_contact:
-            self.t_start = timestamp
+        if self.sync_pressure:
+            if foot_contact[0] and not self.previous_foot_contact:
+                self.t_start = timestamp
+        else:
+            if timestamp > self.t_start + self.period:
+                self.t_start = timestamp
 
         self.previous_foot_contact = foot_contact[0]
 

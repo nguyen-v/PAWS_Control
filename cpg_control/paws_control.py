@@ -8,8 +8,8 @@ import numpy as np
 
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
-MODE = "LOAD"
-LOG_DATA = True
+MODE = "PERTURBATION"
+LOG_DATA = False
 PLOT_DATA = True
 RECOVERY = False
 TRN_TO_RAD = 2*np.pi
