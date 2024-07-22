@@ -1,27 +1,29 @@
 import numpy as np
 
 DEG_TO_TRN = 1/360
-AMPLIFIER = 6
+# AMPLIFIER = 6
+AMPLIFIER = 20
 
 class SineNetwork:
     def __init__(self, amp=None, omega=None, theta=None, offset=None, t_off=None, sync_pressure = True, period = 1):
         if amp is None:
-            # amp = [40*DEG_TO_TRN, 0*DEG_TO_TRN, 20*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
-            # amp = [AMPLIFIER*77*DEG_TO_TRN, 0*DEG_TO_TRN, AMPLIFIER*29*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
-            amp = [AMPLIFIER*29*DEG_TO_TRN, 0*DEG_TO_TRN, AMPLIFIER*30*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
+            # amp = [AMPLIFIER*29*DEG_TO_TRN, 0*DEG_TO_TRN, AMPLIFIER*30*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
+            amp = [AMPLIFIER*0*DEG_TO_TRN, 0*DEG_TO_TRN, AMPLIFIER*30*DEG_TO_TRN, 0*DEG_TO_TRN] # 1
 
         if omega is None:
-            # omega = [2*np.pi/(0.75), 2*np.pi/1, 2*np.pi/0.6, 2*np.pi/1] # 1
-            omega = [2*np.pi/(1), 2*np.pi/1, 2*np.pi/0.7, 2*np.pi/1] # 1
+            # omega = [2*np.pi/(1), 2*np.pi/1, 2*np.pi/0.7, 2*np.pi/1] # 1
+            omega = [2*np.pi/(5), 2*np.pi/1, 2*np.pi/5, 2*np.pi/1] # 1
         if theta is None:
-            theta = [-np.pi/2, 0, -np.pi*0.05, 0] # 1.5
+            # theta = [-np.pi/2, 0, -np.pi*0.05, 0] # 1.5
+            theta = [0, 0, 0, 0] # 1.5
 
         if offset is None:
-            # offset = [1.5/(2*np.pi), 0, -2/(2*np.pi), 0] # 1, 1.5
-            offset = [-0.1, 0, 0, 0] # 1, 1.5
+            # offset = [-0.5, 0, 0.5, 0] # 1, 1.5
+            offset = [0, 0, 0, 0] # 1, 1.5
 
         if t_off is None:
-            t_off = [0, 0, 0.03 ,0] #1
+            # t_off = [0, 0, 0.03 ,0] #1
+            t_off = [0, 0, 0 ,0] #1
 
     # amp = [AMPLIFIER*29, AMPLIFIER*30] # 1
 
@@ -49,13 +51,13 @@ class SineNetwork:
         cmd_angle = np.zeros(4)
 
         if self.sync_pressure:
-            if foot_contact[0] and not self.previous_foot_contact:
+            if foot_contact[2] and not self.previous_foot_contact:
                 self.t_start = timestamp
         else:
             if timestamp > self.t_start + self.period:
                 self.t_start = timestamp
 
-        self.previous_foot_contact = foot_contact[0]
+        self.previous_foot_contact = foot_contact[2]
 
         if self.t_start is not None:
             t = timestamp

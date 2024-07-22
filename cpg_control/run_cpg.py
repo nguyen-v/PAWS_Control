@@ -8,7 +8,7 @@ import numpy as np
 
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
-MODE = "JUMP"
+MODE = "PASSIVE"
 LOG_DATA = False
 PLOT_DATA = True
 RECOVERY = False
@@ -40,7 +40,7 @@ async def motor_control(logger, paws):
 
 async def main():
     # Create new PAWS object
-    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=0.6, sync_pressure = True, once = False, initial_jumps = 2)
+    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=0.6, sync_pressure = True, period = 5, once = False, initial_jumps = 0)
     await paws.create_controllers()
     await paws.set_zero_position()
 

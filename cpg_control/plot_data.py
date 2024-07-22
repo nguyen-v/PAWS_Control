@@ -34,7 +34,7 @@ def plot_positions(data, fields_to_plot, boolean_fields, title, y_label, factor 
     plt.title(title)
 
 # File path to the CSV file
-file_path = './PASSIVE_FAIL_FRONT_LEG.csv'
+file_path = './PASSIVE_LONGER_NEWTENDONS_2KMH.csv'
 # file_path = './SINE_1.5KMH.csv'
 
 # Read the CSV file once

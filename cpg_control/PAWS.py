@@ -4,7 +4,7 @@ import numpy as np
 from HopfNetwork import HopfNetwork
 from SineNetwork import SineNetwork
 
-LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "JUMP2", "CUSTOM", "LOAD", "PERTURBATION", "PERTURBATION_LOAD"]
+LUT_MODES = ["AMPLIFY", "AMPLIFY_FROM_DATA", "AMPLIFY_SPEED", "AMPLIFY_CUSTOM", "JUMP", "JUMP2", "JUMP3", "CUSTOM", "LOAD", "PERTURBATION", "PERTURBATION_LOAD"]
 
 class PAWS:
     def __init__(self,
@@ -20,7 +20,7 @@ class PAWS:
                  period = 1
                  ):
         self.num_controllers = 4
-        self.foot_contact_thr = np.array([102, 104, 103, 104])
+        self.foot_contact_thr = np.array([103, 104, 103.5, 104])
         self.foot_contact = np.array([False, False, False, False])
         self.pressure = np.zeros(self.num_controllers)
         self.power = np.zeros(self.num_controllers)
@@ -240,6 +240,24 @@ class PAWS:
                                  [-1,   0,   -2,   0],  # 1    0    0    0  
                                  [0,   0,   0,   0],  # 1    0    0    1
                                  [-1,   0,   -2,   0],  # 1    0    1    0 
+                                 [0,   0,   0,   0],  # 1    0    1    1
+                                 [0,   0,   0,   0],  # 1    1    0    0
+                                 [0,   0,   0,   0],  # 1    1    0    1
+                                 [0,   0,   0,   0],  # 1    1    1    0
+                                 [0,   0,   0,   0]]) # 1    1    1    1
+        elif self.mode == "JUMP3":
+            self.LUT = np.array([
+                                [-.5,   0,   .5,   0], # for lower CoM on when hitting ground, which increases how long it can accelerate
+                                 [0,   0,   0,   0],  # 0    0    0    1
+                                 [0.01,   0,   -2,   0],  # 0    0    1    0
+                                 [0,   0,   0,   0],  # 0    0    1    1
+                                 [0,   0,   0,   0],  # 0    1    0    0
+                                 [0,   0,   0,   0],  # 0    1    0    1
+                                 [0,   0,   0,   0],  # 0    1    1    0
+                                 [0,   0,   0,   0],  # 0    1    1    1
+                                 [0,   0,   -2,   0],  # 1    0    0    0  
+                                 [0,   0,   0,   0],  # 1    0    0    1
+                                 [0,   0,   -2,   0],  # 1    0    1    0 
                                  [0,   0,   0,   0],  # 1    0    1    1
                                  [0,   0,   0,   0],  # 1    1    0    0
                                  [0,   0,   0,   0],  # 1    1    0    1

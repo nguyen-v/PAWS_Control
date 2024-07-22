@@ -8,8 +8,8 @@ import numpy as np
 
 TIMESTEP = 0.01
 CONTROLLER_IDS = [1, 3]
-MODE = "AMPLIFY_CUSTOM"
-LOG_DATA = False
+MODE = "JUMP3"
+LOG_DATA = True
 PLOT_DATA = True
 RECOVERY = False
 TRN_TO_RAD = 2*np.pi
@@ -40,7 +40,7 @@ async def motor_control(logger, paws):
 
 async def main():
     # Create new PAWS object
-    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=3, once = False, initial_jumps = 0)
+    paws = PAWS(controller_ids=CONTROLLER_IDS, mode=MODE, recovery=RECOVERY, max_torque=0.1, once = False, initial_jumps = 0)
     await paws.create_controllers()
     await paws.set_zero_position()
 
